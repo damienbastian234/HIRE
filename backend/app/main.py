@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.router import router
 from app.core.config import settings
+from app.core.exceptions import register_exception_handlers
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
@@ -23,5 +24,7 @@ app = FastAPI(
     description=settings.APP_DESCRIPTION,
     lifespan=lifespan,
 )
+
+register_exception_handlers(app)
 
 app.include_router(router)
