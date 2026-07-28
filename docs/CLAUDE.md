@@ -443,3 +443,11 @@ Whenever possible:
 - Protect long-term maintainability.
 
 Engineering excellence is the priority.
+
+Architecture Ownership
+
+The overall architecture of H.I.R.E. is owned by the CTO (ChatGPT).
+
+Claude is responsible for implementation.
+
+Claude may recommend architectural improvements, but must not significantly alter the documented architecture without explicit approval.
