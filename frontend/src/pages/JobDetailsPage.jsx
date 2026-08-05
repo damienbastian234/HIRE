@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { FiMapPin, FiClock, FiArrowLeft } from "react-icons/fi";
 import Button from "../components/Button";
@@ -7,14 +7,18 @@ import MatchMeter from "../components/MatchMeter";
 import ErrorState from "../components/ErrorState";
 import ToastContainer from "../components/Toast";
 import useToast from "../hooks/useToast";
-import { mockJobs } from "../services/mockData";
+import { applyJob, getJobById } from "../services/api";
 
 export default function JobDetailsPage() {
   const { jobId } = useParams();
-  const job = mockJobs.find((j) => j.id === jobId);
+  const [job, setJob] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const { toasts, addToast, removeToast } = useToast();
+
+  useEffect(() => {
+    getJobById(jobId).then(({ data }) => setJob(data.job || null));
+  }, [jobId]);
 
   if (!job) {
     return (
@@ -29,11 +33,15 @@ export default function JobDetailsPage() {
 
   const handleApply = async () => {
     setIsApplying(true);
-    // Replace with services/api.js -> applyJob(jobId, payload)
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setIsApplying(false);
-    setIsModalOpen(false);
-    addToast("Application submitted.", "success");
+    try {
+      await applyJob(jobId, { message: "Interested in this role." });
+      setIsModalOpen(false);
+      addToast("Application submitted.", "success");
+    } catch (error) {
+      addToast(error.response?.data?.detail || "Unable to submit application.", "error");
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   return (

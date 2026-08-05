@@ -1,26 +1,26 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FiSearch } from "react-icons/fi";
 import JobCard from "../components/JobCard";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { mockJobs } from "../services/mockData";
+import { getJobs } from "../services/api";
 
 const TYPES = ["All", "Full-time", "Contract"];
 
 export default function JobListingsPage() {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("All");
-  const [isLoading] = useState(false);
+  const [jobs, setJobs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    return mockJobs.filter((job) => {
-      const matchesQuery =
-        job.title.toLowerCase().includes(query.toLowerCase()) ||
-        job.company.toLowerCase().includes(query.toLowerCase());
-      const matchesType = type === "All" || job.type === type;
-      return matchesQuery && matchesType;
-    });
+  useEffect(() => {
+    setIsLoading(true);
+    getJobs({ search: query, type: type === "All" ? "" : type })
+      .then(({ data }) => setJobs(data.jobs || []))
+      .finally(() => setIsLoading(false));
   }, [query, type]);
+
+  const filtered = useMemo(() => jobs, [jobs]);
 
   return (
     <div className="container-page py-10">

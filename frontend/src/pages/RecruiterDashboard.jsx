@@ -4,7 +4,7 @@ import DashboardCard from "../components/DashboardCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import EmptyState from "../components/EmptyState";
 import MatchMeter from "../components/MatchMeter";
-import { mockRecruiterCandidates, mockRecruiterStats, mockRecruiter } from "../services/mockData";
+import { getDashboard } from "../services/api";
 
 const ICONS = {
   "Open roles": <FiBriefcase size={16} />,
@@ -16,23 +16,26 @@ const ICONS = {
 export default function RecruiterDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [candidates, setCandidates] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [company, setCompany] = useState("Your team");
 
   useEffect(() => {
-    // Replace with services/api.js -> getDashboard("recruiter")
-    const timer = setTimeout(() => {
-      setCandidates(mockRecruiterCandidates);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    getDashboard("recruiter")
+      .then(({ data }) => {
+        setCandidates(data.candidates || []);
+        setStats(data.stats || []);
+        setCompany(data.company || "Your team");
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
     <div>
       <span className="eyebrow">Recruiter dashboard</span>
-      <h1 className="mt-2 text-2xl font-semibold">{mockRecruiter.company} pipeline</h1>
+      <h1 className="mt-2 text-2xl font-semibold">{company} pipeline</h1>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {mockRecruiterStats.map((stat) => (
+        {stats.map((stat) => (
           <DashboardCard key={stat.label} label={stat.label} value={stat.value} icon={ICONS[stat.label]} />
         ))}
       </div>

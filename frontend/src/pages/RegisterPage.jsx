@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
 import Button from "../components/Button";
 import useAuth from "../hooks/useAuth";
+import { register, getProfile } from "../services/api";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [serverError, setServerError] = useState("");
 
   const validate = () => {
     const next = {};
@@ -25,11 +27,34 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!validate()) return;
     setIsLoading(true);
-    // Replace with services/api.js -> register({ ...form, role }) once backend is connected.
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    signIn(role);
-    setIsLoading(false);
-    navigate("/dashboard");
+    setServerError("");
+    try {
+      const { data } = await register({ ...form, role });
+      signIn(data.user, data.token);
+      
+      // Fetch the latest profile to ensure we have up-to-date user data
+      try {
+        const { data: profileData } = await getProfile();
+        const latestProfile = profileData.profile || profileData;
+        signIn({
+          ...data.user,
+          name: latestProfile.name,
+          title: latestProfile.title,
+          email: latestProfile.email,
+          location: latestProfile.location,
+          role: role,
+        }, data.token);
+      } catch (profileError) {
+        // If fetching profile fails, continue with the registration data we have
+        console.warn("Failed to fetch latest profile:", profileError);
+      }
+      
+      navigate("/dashboard");
+    } catch (error) {
+      setServerError(error.response?.data?.detail || "Unable to create an account right now.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -81,6 +106,7 @@ export default function RegisterPage() {
             placeholder="At least 6 characters"
             autoComplete="new-password"
           />
+          {serverError ? <p className="text-sm text-alert">{serverError}</p> : null}
           <Button type="submit" variant="signal" size="lg" isLoading={isLoading} className="mt-2">
             Create account
           </Button>

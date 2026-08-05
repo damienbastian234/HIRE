@@ -5,6 +5,7 @@ import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ToastContainer from "../components/Toast";
 import useToast from "../hooks/useToast";
+import { uploadResume } from "../services/api";
 
 export default function ResumeUploadPage() {
   const [file, setFile] = useState(null);
@@ -18,11 +19,15 @@ export default function ResumeUploadPage() {
       return;
     }
     setIsUploading(true);
-    // Replace with services/api.js -> uploadResume(file, onUploadProgress)
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    setIsUploading(false);
-    setIsDone(true);
-    addToast("Resume uploaded and parsed.", "success");
+    try {
+      await uploadResume(file);
+      setIsDone(true);
+      addToast("Resume uploaded and parsed.", "success");
+    } catch (error) {
+      addToast(error.response?.data?.detail || "Unable to upload resume.", "error");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (

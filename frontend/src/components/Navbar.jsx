@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FiMenu, FiX } from "react-icons/fi";
 import { AnimatePresence, motion } from "framer-motion";
 import Button from "./Button";
@@ -17,7 +17,14 @@ const LINKS = [
  */
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const { isAuthenticated, user, signOut } = useAuth();
+
+  const handleSignOut = () => {
+    signOut();
+    setOpen(false);
+    navigate("/login", { replace: true });
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-ink/8 bg-paper/90 backdrop-blur">
@@ -44,8 +51,8 @@ export default function Navbar() {
         <div className="hidden items-center gap-3 md:flex">
           {isAuthenticated ? (
             <>
-              <span className="text-sm text-slate">Hi, {user.name.split(" ")[0]}</span>
-              <Button variant="outline" size="sm" onClick={signOut}>
+              <span className="text-sm text-slate">Hi, {user?.name?.split(" ")[0] || "there"}</span>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Sign out
               </Button>
             </>
@@ -89,7 +96,7 @@ export default function Navbar() {
               ))}
               <div className="mt-2 flex flex-col gap-2">
                 {isAuthenticated ? (
-                  <Button variant="outline" size="sm" onClick={signOut}>
+                  <Button variant="outline" size="sm" onClick={handleSignOut}>
                     Sign out
                   </Button>
                 ) : (

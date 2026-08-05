@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FiMic, FiCheckCircle } from "react-icons/fi";
 import Button from "../components/Button";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { mockInterviewQuestions } from "../services/mockData";
+import { startInterview, submitInterviewAnswer } from "../services/api";
 
 export default function AIInterviewPage() {
   const [started, setStarted] = useState(false);
@@ -11,20 +11,24 @@ export default function AIInterviewPage() {
   const [answer, setAnswer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [sessionId, setSessionId] = useState(null);
 
-  const current = mockInterviewQuestions[index];
-  const isLast = index === mockInterviewQuestions.length - 1;
+  const current = questions[index];
+  const isLast = index === questions.length - 1;
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Replace with services/api.js -> submitInterviewAnswer(sessionId, { questionId, answerText })
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setIsSubmitting(false);
-    setAnswer("");
-    if (isLast) {
-      setFinished(true);
-    } else {
-      setIndex((i) => i + 1);
+    try {
+      await submitInterviewAnswer(sessionId, { questionId: current?.id, answerText: answer });
+      setAnswer("");
+      if (isLast) {
+        setFinished(true);
+      } else {
+        setIndex((i) => i + 1);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -42,8 +46,10 @@ export default function AIInterviewPage() {
           variant="signal"
           size="lg"
           className="mt-8"
-          onClick={() => {
-            // Replace with services/api.js -> startInterview(jobId)
+          onClick={async () => {
+            const { data } = await startInterview();
+            setSessionId(data.sessionId);
+            setQuestions(data.questions || []);
             setStarted(true);
           }}
         >
@@ -69,10 +75,10 @@ export default function AIInterviewPage() {
     <div className="container-page max-w-2xl py-14">
       <div className="flex items-center justify-between">
         <span className="eyebrow">
-          Question {index + 1} of {mockInterviewQuestions.length}
+          Question {index + 1} of {questions.length}
         </span>
         <div className="flex items-center gap-1.5">
-          {mockInterviewQuestions.map((q, i) => (
+          {questions.map((q, i) => (
             <span
               key={q.id}
               className={`h-1.5 w-8 rounded-full ${i <= index ? "bg-signal-dark" : "bg-ink/10"}`}
@@ -94,7 +100,7 @@ export default function AIInterviewPage() {
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-signal">
               <FiMic size={16} />
             </span>
-            <p className="pt-1.5 font-display text-base font-medium text-ink">{current.prompt}</p>
+            <p className="pt-1.5 font-display text-base font-medium text-ink">{current?.prompt}</p>
           </div>
 
           <textarea

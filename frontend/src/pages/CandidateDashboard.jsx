@@ -5,21 +5,24 @@ import DashboardCard from "../components/DashboardCard";
 import MatchMeter from "../components/MatchMeter";
 import EmptyState from "../components/EmptyState";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { mockApplications, mockCandidateStats, mockUser } from "../services/mockData";
+import useAuth from "../hooks/useAuth";
+import { getDashboard } from "../services/api";
 
 const ICONS = { Applications: <FiSend size={16} />, Interviews: <FiCalendar size={16} />, Offers: <FiAward size={16} />, "Profile match": <FiTarget size={16} /> };
 
 export default function CandidateDashboard() {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [applications, setApplications] = useState([]);
+  const [stats, setStats] = useState([]);
 
   useEffect(() => {
-    // Replace with services/api.js -> getDashboard("candidate")
-    const timer = setTimeout(() => {
-      setApplications(mockApplications);
-      setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    getDashboard("candidate")
+      .then(({ data }) => {
+        setApplications(data.applications || []);
+        setStats(data.stats || []);
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -27,13 +30,13 @@ export default function CandidateDashboard() {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <span className="eyebrow">Candidate dashboard</span>
-          <h1 className="mt-2 text-2xl font-semibold">Welcome back, {mockUser.name.split(" ")[0]}</h1>
+          <h1 className="mt-2 text-2xl font-semibold">Welcome back, {user?.name?.split(" ")[0] || "there"}</h1>
         </div>
-        <MatchMeter score={mockUser.matchScore} label="profile" />
+        <MatchMeter score={92} label="profile" />
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {mockCandidateStats.map((stat) => (
+        {stats.map((stat) => (
           <DashboardCard key={stat.label} label={stat.label} value={stat.value} icon={ICONS[stat.label]} />
         ))}
       </div>

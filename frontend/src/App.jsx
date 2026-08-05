@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 
@@ -16,6 +16,16 @@ import ApplicationStatusPage from "./pages/ApplicationStatusPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import useAuth from "./hooks/useAuth";
 
+function ProtectedRoute({ children }) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return null;
+  }
+
+  return user ? children : <Navigate to="/login" replace />;
+}
+
 export default function App() {
   const { user } = useAuth();
 
@@ -31,7 +41,7 @@ export default function App() {
         <Route path="/application-status" element={<ApplicationStatusPage />} />
       </Route>
 
-      <Route element={<DashboardLayout />}>
+      <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
         <Route
           path="/dashboard"
           element={user?.role === "recruiter" ? <RecruiterDashboard /> : <CandidateDashboard />}
