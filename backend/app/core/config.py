@@ -13,7 +13,13 @@ from typing import List, Optional, Union
 from typing_extensions import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+try:
+    from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+except ImportError:  # pragma: no cover - compatibility with older pydantic-settings
+    from pydantic_settings import BaseSettings, SettingsConfigDict
+
+    NoDecode = None
 
 
 class Environment(str, Enum):
@@ -62,7 +68,7 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Security / Auth
     # ------------------------------------------------------------------
-    SECRET_KEY: str = Field(min_length=32)
+    SECRET_KEY: str = Field(default="dev-secret-key-change-me-in-production", min_length=32)
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, gt=0)
 
