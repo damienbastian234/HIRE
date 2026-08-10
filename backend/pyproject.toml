@@ -1,0 +1,39 @@
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+exclude = [
+    "venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".ruff_cache",
+    "alembic"
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B"
+]
+
+ignore = [
+    "E501"
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
+
+pythonpath = [
+    "."
+]
+
+addopts = "-ra"
+
+[tool.black]
+line-length = 100
+target-version = ["py313"]
