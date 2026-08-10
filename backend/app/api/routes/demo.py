@@ -1,101 +1,140 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, EmailStr
+from typing import Optional, Literal
 
-router = APIRouter(tags=["demo"])
-profile_store = {
+router = APIRouter()
+
+DEMO_PROFILE = {
     "name": "Demo Candidate",
     "title": "Product Designer",
     "email": "candidate@example.com",
     "location": "San Francisco, CA",
+    "role": "candidate",
 }
+
+JOBS = [
+    {
+        "id": "job-product-designer",
+        "title": "Product Designer",
+        "company": "Northstar Labs",
+        "location": "San Francisco, CA",
+        "type": "Full-time",
+        "salary": "$120k - $150k",
+        "description": "Design and ship AI-powered recruiting workflows.",
+    },
+    {
+        "id": "job-senior-recruiting-analyst",
+        "title": "Senior Recruiting Analyst",
+        "company": "Harmonic Health",
+        "location": "Remote",
+        "type": "Contract",
+        "salary": "$90k - $120k",
+        "description": "Drive candidate experience and funnel analytics.",
+    },
+]
+
+CANDIDATE_STATS = [
+    {"label": "Applications", "value": 3},
+    {"label": "Interviews", "value": 1},
+    {"label": "Offers", "value": 1},
+    {"label": "Profile match", "value": "92%"},
+]
+
+RECRUITER_STATS = [
+    {"label": "Open roles", "value": 12},
+    {"label": "Active candidates", "value": 42},
+    {"label": "Interviews this week", "value": 26},
+    {"label": "Avg. time to hire", "value": "19 days"},
+]
+
+APPLICATIONS = [
+    {"id": "app-001", "jobId": "job-product-designer", "status": "In review", "updatedAt": "Today"},
+    {"id": "app-002", "jobId": "job-senior-recruiting-analyst", "status": "Interview scheduled", "updatedAt": "2d ago"},
+]
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: Optional[Literal["candidate", "recruiter"]] = "candidate"
+
+
+class ProfileUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    title: Optional[str] = None
+    email: Optional[str] = None
+    location: Optional[str] = None
+    role: Optional[Literal["candidate", "recruiter"]] = None
 
 
 @router.post("/auth/login")
-def login(payload: dict):
+def login(payload: LoginRequest):
+    user = {
+        "id": "demo-user",
+        "name": DEMO_PROFILE["name"],
+        "email": payload.email or DEMO_PROFILE["email"],
+        "role": "candidate",
+    }
     return {
         "token": "demo-token",
-        "user": {
-            "id": "demo-user",
-            "name": "Demo Candidate",
-            "email": payload.get("email", "candidate@example.com"),
-            "role": "candidate",
-        },
+        "user": user,
     }
 
 
 @router.post("/auth/register")
-def register(payload: dict):
+def register(payload: RegisterRequest):
+    user = {
+        "id": "demo-user",
+        "name": payload.name or "Demo Candidate",
+        "email": payload.email or DEMO_PROFILE["email"],
+        "role": payload.role or "candidate",
+    }
     return {
         "token": "demo-token",
-        "user": {
-            "id": "demo-user",
-            "name": payload.get("name", "Demo User"),
-            "email": payload.get("email", "candidate@example.com"),
-            "role": payload.get("role", "candidate"),
-        },
+        "user": user,
     }
 
 
+@router.get("/profile")
+def get_profile():
+    return DEMO_PROFILE.copy()
+
+
+@router.put("/profile")
+def update_profile(payload: ProfileUpdateRequest):
+    merged = DEMO_PROFILE.copy()
+    for key, value in payload.model_dump(exclude_none=True).items():
+        merged[key] = value
+    DEMO_PROFILE.clear()
+    DEMO_PROFILE.update(merged)
+    return {"success": True, "profile": DEMO_PROFILE.copy()}
+
+
 @router.get("/jobs")
-def get_jobs(search: str | None = None, location: str | None = None, type: str | None = None, page: int = 1):
-    jobs = [
-        {
-            "id": "job-1",
-            "title": "Senior Product Designer",
-            "company": "Northstar Labs",
-            "location": "Remote",
-            "type": "Full-time",
-            "postedDaysAgo": 3,
-            "matchScore": 92,
-            "salaryRange": "$140k - $180k",
-            "description": "Shape the end-to-end product experience for a fast-moving SaaS team.",
-            "responsibilities": ["Lead design strategy", "Collaborate with product and engineering"],
-            "requirements": ["6+ years in product design", "Figma and prototyping"],
-            "tags": ["Design", "Remote", "Leadership"],
-        },
-        {
-            "id": "job-2",
-            "title": "Frontend Engineer",
-            "company": "Brightly",
-            "location": "New York, NY",
-            "type": "Contract",
-            "postedDaysAgo": 7,
-            "matchScore": 87,
-            "salaryRange": "$110k - $130k",
-            "description": "Build polished user experiences for a modern analytics platform.",
-            "responsibilities": ["Implement React interfaces", "Improve performance"],
-            "requirements": ["React and TypeScript", "3+ years experience"],
-            "tags": ["React", "TypeScript", "Product"],
-        },
-    ]
-
-    filtered = jobs
-    if search:
-        term = search.lower()
-        filtered = [job for job in filtered if term in job["title"].lower() or term in job["company"].lower()]
-    if location:
-        filtered = [job for job in filtered if location.lower() in job["location"].lower()]
-    if type and type.lower() != "all":
-        filtered = [job for job in filtered if job["type"].lower() == type.lower()]
-
-    return {"jobs": filtered, "total": len(filtered)}
+def get_jobs():
+    return {"jobs": JOBS, "total": len(JOBS)}
 
 
 @router.get("/jobs/{job_id}")
-def get_job(job_id: str):
-    jobs = get_jobs().__getitem__("jobs")
-    job = next((item for item in jobs if item["id"] == job_id), None)
+def get_job_by_id(job_id: str):
+    job = next((item for item in JOBS if item["id"] == job_id), None)
     if not job:
-        return {"detail": "Not found"}
+        raise HTTPException(status_code=404, detail="Job not found")
     return {"job": job}
 
 
 @router.post("/jobs/{job_id}/apply")
-def apply_to_job(job_id: str, payload: dict):
+def apply_job(job_id: str):
     return {
         "success": True,
         "message": "Application submitted.",
         "applicationId": f"app-{job_id}",
-        "payload": payload,
     }
 
 
@@ -104,83 +143,22 @@ def get_dashboard(role: str):
     if role == "recruiter":
         return {
             "company": "Northstar Labs",
-            "stats": [
-                {"label": "Open roles", "value": "8"},
-                {"label": "Active candidates", "value": "24"},
-                {"label": "Interviews this week", "value": "6"},
-                {"label": "Avg. time to hire", "value": "14d"},
-            ],
+            "stats": RECRUITER_STATS,
             "candidates": [
-                {"id": "cand-1", "name": "Ava Patel", "role": "Product Designer", "stage": "Screening", "matchScore": 91},
-                {"id": "cand-2", "name": "Miles Chen", "role": "Frontend Engineer", "stage": "Interview", "matchScore": 88},
+                {"name": "Mia Johnson", "stage": "Interview", "skillMatch": 94},
+                {"name": "Chris Smith", "stage": "Screening", "skillMatch": 88},
             ],
         }
 
     return {
-        "applications": [
-            {"id": "app-1", "jobTitle": "Senior Product Designer", "company": "Northstar Labs", "stage": "Applied", "rejected": False},
-            {"id": "app-2", "jobTitle": "Frontend Engineer", "company": "Brightly", "stage": "Interview", "rejected": False},
-        ],
-        "stats": [
-            {"label": "Applications", "value": "2"},
-            {"label": "Interviews", "value": "1"},
-            {"label": "Offers", "value": "0"},
-            {"label": "Profile match", "value": "92%"},
-        ],
+        "applications": APPLICATIONS,
+        "stats": CANDIDATE_STATS,
     }
 
 
 @router.get("/applications/{application_id}")
-def get_application(application_id: str):
-    return {
-        "id": application_id,
-        "status": "In review",
-        "updatedAt": "Today",
-    }
-
-
-@router.get("/profile")
-def get_profile():
-    return profile_store
-
-
-@router.put("/profile")
-def update_profile(payload: dict):
-    profile_store.update(payload)
-    return {"success": True, "profile": profile_store}
-
-
-@router.post("/resume/upload")
-def upload_resume():
-    return {
-        "success": True,
-        "resumeId": "resume-001",
-        "message": "Resume uploaded and parsed.",
-    }
-
-
-@router.post("/interview/start")
-def start_interview(payload: dict):
-    return {
-        "sessionId": "interview-demo",
-        "questions": [
-            {"id": "q1", "prompt": "Tell me about yourself."},
-            {"id": "q2", "prompt": "Describe a challenge you overcame."},
-        ],
-        "payload": payload,
-    }
-
-
-@router.post("/interview/{session_id}/answer")
-def submit_answer(session_id: str, payload: dict):
-    return {"success": True, "sessionId": session_id, "payload": payload}
-
-
-@router.get("/interview/{session_id}/result")
-def get_result(session_id: str):
-    return {
-        "sessionId": session_id,
-        "status": "complete",
-        "score": 88,
-        "feedback": "Strong communication and clear examples.",
-    }
+def get_application_status(application_id: str):
+    result = next((item for item in APPLICATIONS if item["id"] == application_id), None)
+    if not result:
+        return {"id": application_id, "status": "In review", "updatedAt": "Today"}
+    return result
