@@ -8,15 +8,14 @@ compare a CandidateProfile against a JobRequirement to produce
 candidate-job matching intelligence.
 """
 
-from datetime import datetime, timezone
-from enum import Enum
-from typing import List, Optional
+from datetime import UTC, datetime
+from enum import StrEnum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
-class EmploymentType(str, Enum):
+class EmploymentType(StrEnum):
     """The employment arrangement offered for a job posting."""
 
     FULL_TIME = "FULL_TIME"
@@ -27,7 +26,7 @@ class EmploymentType(str, Enum):
     TEMPORARY = "TEMPORARY"
 
 
-class WorkMode(str, Enum):
+class WorkMode(StrEnum):
     """Where the role is performed."""
 
     ONSITE = "ONSITE"
@@ -35,7 +34,7 @@ class WorkMode(str, Enum):
     HYBRID = "HYBRID"
 
 
-def _trim_or_none(value: Optional[str]) -> Optional[str]:
+def _trim_or_none(value: str | None) -> str | None:
     """Strip whitespace from a string field; convert an empty result to None."""
     if value is None or not isinstance(value, str):
         return value
@@ -44,7 +43,7 @@ def _trim_or_none(value: Optional[str]) -> Optional[str]:
     return stripped or None
 
 
-def _trim_list_items(values: Optional[List[str]]) -> Optional[List[str]]:
+def _trim_list_items(values: list[str] | None) -> list[str] | None:
     """Strip whitespace from each string in a list, dropping any that become empty."""
     if values is None:
         return values
@@ -60,7 +59,7 @@ class ExperienceRequirement(BaseModel):
     minimum_years: float = Field(
         ..., ge=0, description="Minimum years of experience required. Must be >= 0."
     )
-    preferred_years: Optional[float] = Field(
+    preferred_years: float | None = Field(
         default=None,
         ge=0,
         description="Preferred (ideal) years of experience, if any. Must be >= minimum_years when set.",
@@ -79,10 +78,10 @@ class SalaryRange(BaseModel):
     Compensation range for a job posting.
     """
 
-    minimum: Optional[float] = Field(
+    minimum: float | None = Field(
         default=None, ge=0, description="Minimum salary offered, if disclosed. Must be >= 0."
     )
-    maximum: Optional[float] = Field(
+    maximum: float | None = Field(
         default=None, ge=0, description="Maximum salary offered, if disclosed. Must be >= 0."
     )
     currency: str = Field(
@@ -98,7 +97,7 @@ class SalaryRange(BaseModel):
 
     @field_validator("currency", mode="before")
     @classmethod
-    def _trim_currency(cls, value: Optional[str]) -> Optional[str]:
+    def _trim_currency(cls, value: str | None) -> str | None:
         """Trim whitespace from the currency field."""
         if isinstance(value, str):
             return value.strip()
@@ -110,22 +109,22 @@ class EducationRequirement(BaseModel):
     Educational qualifications required or preferred for a job posting.
     """
 
-    degrees: List[str] = Field(
+    degrees: list[str] = Field(
         default_factory=list, description="Acceptable degree names, e.g. 'B.Tech', 'M.Sc'."
     )
-    fields_of_study: List[str] = Field(
+    fields_of_study: list[str] = Field(
         default_factory=list, description="Acceptable fields of study, e.g. 'Computer Science'."
     )
-    minimum_percentage: Optional[float] = Field(
+    minimum_percentage: float | None = Field(
         default=None, ge=0, le=100, description="Minimum academic percentage required, 0-100."
     )
-    minimum_cgpa: Optional[float] = Field(
+    minimum_cgpa: float | None = Field(
         default=None, ge=0, le=10, description="Minimum CGPA required, 0-10."
     )
 
     @field_validator("degrees", "fields_of_study", mode="before")
     @classmethod
-    def _trim_list_fields(cls, value: Optional[List[str]]) -> Optional[List[str]]:
+    def _trim_list_fields(cls, value: list[str] | None) -> list[str] | None:
         """Trim whitespace from list items and drop blank values."""
         return _trim_list_items(value)
 
@@ -151,14 +150,14 @@ class SkillRequirement(BaseModel):
         default=True,
         description="Whether this specific skill is mandatory (True) or merely desirable (False).",
     )
-    minimum_proficiency: Optional[str] = Field(
+    minimum_proficiency: str | None = Field(
         default=None,
         description=(
             "Free-text minimum proficiency descriptor (e.g. 'Intermediate'), "
             "if specified. No normalization or fuzzy matching is applied."
         ),
     )
-    minimum_years: Optional[float] = Field(
+    minimum_years: float | None = Field(
         default=None,
         ge=0,
         description="Minimum years of experience with this specific skill, if specified. Must be >= 0.",
@@ -166,7 +165,7 @@ class SkillRequirement(BaseModel):
 
     @field_validator("name", mode="before")
     @classmethod
-    def _trim_name(cls, value: Optional[str]) -> Optional[str]:
+    def _trim_name(cls, value: str | None) -> str | None:
         """Trim whitespace from the skill name."""
         if isinstance(value, str):
             return value.strip()
@@ -182,7 +181,7 @@ class SkillRequirement(BaseModel):
 
     @field_validator("minimum_proficiency", mode="before")
     @classmethod
-    def _trim_proficiency(cls, value: Optional[str]) -> Optional[str]:
+    def _trim_proficiency(cls, value: str | None) -> str | None:
         """Trim whitespace from proficiency text and convert empty values to None."""
         return _trim_or_none(value)
 
@@ -201,49 +200,49 @@ class JobRequirement(BaseModel):
         default_factory=uuid4, description="Unique identifier for this job posting."
     )
     title: str = Field(..., min_length=1, description="Job title. Required, non-empty.")
-    department: Optional[str] = Field(default=None, description="Hiring department, if specified.")
-    company: Optional[str] = Field(default=None, description="Hiring company name, if specified.")
-    location: Optional[str] = Field(
+    department: str | None = Field(default=None, description="Hiring department, if specified.")
+    company: str | None = Field(default=None, description="Hiring company name, if specified.")
+    location: str | None = Field(
         default=None, description="Job location, if specified (may be omitted for remote roles)."
     )
-    work_mode: Optional[WorkMode] = Field(
+    work_mode: WorkMode | None = Field(
         default=None, description="Where the role is performed, if specified."
     )
-    employment_type: Optional[EmploymentType] = Field(
+    employment_type: EmploymentType | None = Field(
         default=None, description="Employment arrangement, if specified."
     )
-    description: Optional[str] = Field(default=None, description="Free-text job description, if provided.")
-    responsibilities: List[str] = Field(
+    description: str | None = Field(default=None, description="Free-text job description, if provided.")
+    responsibilities: list[str] = Field(
         default_factory=list, description="Job responsibilities, as a list of statements."
     )
-    required_skills: List[SkillRequirement] = Field(
+    required_skills: list[SkillRequirement] = Field(
         default_factory=list, description="Skills mandatory for this role."
     )
-    preferred_skills: List[SkillRequirement] = Field(
+    preferred_skills: list[SkillRequirement] = Field(
         default_factory=list, description="Skills that are a bonus but not mandatory for this role."
     )
-    experience: Optional[ExperienceRequirement] = Field(
+    experience: ExperienceRequirement | None = Field(
         default=None, description="Years-of-experience requirement, if specified."
     )
-    education: Optional[EducationRequirement] = Field(
+    education: EducationRequirement | None = Field(
         default=None, description="Educational requirement, if specified."
     )
-    salary: Optional[SalaryRange] = Field(default=None, description="Compensation range, if disclosed.")
-    keywords: List[str] = Field(
+    salary: SalaryRange | None = Field(default=None, description="Compensation range, if disclosed.")
+    keywords: list[str] = Field(
         default_factory=list, description="Free-form search/matching keywords for this posting."
     )
     created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp this job requirement record was created, in UTC.",
     )
     updated_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp this job requirement record was last updated, in UTC.",
     )
 
     @field_validator("title", mode="before")
     @classmethod
-    def _trim_title(cls, value: Optional[str]) -> Optional[str]:
+    def _trim_title(cls, value: str | None) -> str | None:
         """Trim whitespace from the title before validation."""
         if isinstance(value, str):
             return value.strip()
@@ -259,12 +258,12 @@ class JobRequirement(BaseModel):
 
     @field_validator("department", "company", "location", "description", mode="before")
     @classmethod
-    def _trim_optional_text_fields(cls, value: Optional[str]) -> Optional[str]:
+    def _trim_optional_text_fields(cls, value: str | None) -> str | None:
         """Trim optional text fields and convert empty values to None."""
         return _trim_or_none(value)
 
     @field_validator("responsibilities", "keywords", mode="before")
     @classmethod
-    def _trim_list_fields(cls, value: Optional[List[str]]) -> Optional[List[str]]:
+    def _trim_list_fields(cls, value: list[str] | None) -> list[str] | None:
         """Trim whitespace from list items and drop blank values."""
         return _trim_list_items(value)
