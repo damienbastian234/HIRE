@@ -14,48 +14,18 @@ function getPythonCommand() {
   if (process.env.PYTHON) return process.env.PYTHON;
   if (process.env.PYTHON_EXE) return process.env.PYTHON_EXE;
 
-  if (process.platform === 'win32') {
-    const candidatePaths = [
-      path.join(
-        process.env.USERPROFILE || '',
-        'AppData',
-        'Local',
-        'Programs',
-        'Python',
-        'Python312',
-        'python.exe'
-      ),
-      path.join(
-        process.env.USERPROFILE || '',
-        'AppData',
-        'Local',
-        'Programs',
-        'Python',
-        'Python311',
-        'python.exe'
-      ),
-      path.join(
-        process.env.USERPROFILE || '',
-        'AppData',
-        'Local',
-        'Microsoft',
-        'WindowsApps',
-        'python.exe'
-      ),
-    ];
+  // Always prefer the project's virtual environment.
+  const venvPython =
+    process.platform === 'win32'
+      ? path.join(root, 'backend', 'venv', 'Scripts', 'python.exe')
+      : path.join(root, 'backend', 'venv', 'bin', 'python');
 
-    const existing = candidatePaths.find((candidate) =>
-      fs.existsSync(candidate)
-    );
-
-    if (existing) {
-      return existing;
-    }
-
-    return 'py';
+  if (fs.existsSync(venvPython)) {
+    return venvPython;
   }
 
-  return 'python3';
+  // Fallback to system Python.
+  return process.platform === 'win32' ? 'py' : 'python3';
 }
 
 const pythonCmd = getPythonCommand();
