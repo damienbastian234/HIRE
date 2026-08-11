@@ -1,0 +1,7 @@
+{
+  "name": "hire-monorepo",
+  "private": true,
+  "scripts": {
+    "start": "node ./start.js"
+  }
+}

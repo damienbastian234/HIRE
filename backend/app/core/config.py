@@ -10,10 +10,9 @@ read environment variables directly; import `settings` (or call
 from enum import Enum
 from functools import lru_cache
 from typing import List, Optional, Union
-from typing_extensions import Annotated
 
-from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from pydantic import AliasChoices, Field, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Environment(str, Enum):
@@ -63,7 +62,10 @@ class Settings(BaseSettings):
     # Security / Auth
     # ------------------------------------------------------------------
     SECRET_KEY: str = Field(min_length=32)
-    ALGORITHM: str = "HS256"
+    ALGORITHM: str = Field(
+        default="HS256",
+        validation_alias=AliasChoices("ALGORITHM", "JWT_ALGORITHM"),
+    )
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, gt=0)
 
     # ------------------------------------------------------------------
@@ -86,23 +88,22 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # CORS
     # ------------------------------------------------------------------
-    ALLOWED_ORIGINS: Annotated[List[str], NoDecode] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: str = "http://localhost:3000"
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
-    def split_allowed_origins(cls, value: Union[str, List[str]]) -> List[str]:
+    def split_allowed_origins(cls, value: Union[str, List[str]]) -> str:
         """
-        Allow ALLOWED_ORIGINS to be provided as a comma-separated string
-        in the .env file (e.g. "http://localhost:3000,http://localhost:5173")
-        while exposing it to the application as a List[str].
-
-        NoDecode prevents pydantic-settings from attempting to JSON-decode
-        this field before the validator runs, since the .env value is a
-        plain comma-separated string rather than a JSON array.
+        Keep the raw dotenv value as plain text so pydantic-settings does not
+        attempt JSON decoding of a comma-delimited string, and then expose the
+        same value to the application as a normalized list when the settings
+        are consumed.
         """
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+            return value
+        if isinstance(value, list):
+            return ",".join(value)
+        return str(value)
 
 
 @lru_cache

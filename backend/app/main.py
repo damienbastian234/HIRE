@@ -27,4 +27,4 @@ app = FastAPI(
 
 register_exception_handlers(app)
 
-app.include_router(router)
+app.include_router(router, prefix=settings.API_PREFIX)
