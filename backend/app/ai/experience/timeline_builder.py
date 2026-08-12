@@ -10,7 +10,6 @@ chronologically ordered CareerTimeline. Tolerates missing dates,
 
 import re
 from datetime import datetime, timezone
-from typing import Optional, Tuple
 
 from app.models.candidate import Experience
 from app.models.experience_intelligence_model import CareerTimeline, TimelineEntry
@@ -84,7 +83,7 @@ def _build_entry(exp: Experience) -> TimelineEntry:
     )
 
 
-def _parse_date(raw: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
+def _parse_date(raw: str | None) -> tuple[int | None, int | None]:
     """Parse a free-text date string into (year, month). month is None if unresolvable."""
     if not raw or not raw.strip():
         return None, None
@@ -104,18 +103,18 @@ def _parse_date(raw: Optional[str]) -> Tuple[Optional[int], Optional[int]]:
     return None, None
 
 
-def _is_present(raw: Optional[str]) -> bool:
+def _is_present(raw: str | None) -> bool:
     """True if the raw end-date string indicates ongoing employment."""
     return bool(raw) and raw.strip().lower() in _PRESENT_TERMS
 
 
 def _compute_duration_months(
-    start_year: Optional[int],
-    start_month: Optional[int],
-    end_year: Optional[int],
-    end_month: Optional[int],
+    start_year: int | None,
+    start_month: int | None,
+    end_year: int | None,
+    end_month: int | None,
     is_current: bool,
-) -> Optional[int]:
+) -> int | None:
     """
     Compute tenure in months, inclusive of both the start and end
     month (e.g. Jan 2022 - Jan 2022 counts as 1 month, not 0).

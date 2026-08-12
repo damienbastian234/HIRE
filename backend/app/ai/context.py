@@ -4,7 +4,7 @@ Shared execution context for AI workflows.
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -38,15 +38,15 @@ class WorkflowState(BaseModel):
         default=WorkflowStatus.PENDING,
         description="Current lifecycle stage of the workflow.",
     )
-    current_engine: Optional[str] = Field(
+    current_engine: str | None = Field(
         default=None,
         description="Name of the engine currently executing, if any.",
     )
-    completed_engines: List[str] = Field(
+    completed_engines: list[str] = Field(
         default_factory=list,
         description="Names of engines that have completed successfully, in execution order.",
     )
-    failed_engine: Optional[str] = Field(
+    failed_engine: str | None = Field(
         default=None,
         description="Name of the engine that failed, if the workflow halted due to a failure.",
     )
@@ -86,7 +86,7 @@ class AIContext(BaseModel):
         default_factory=uuid4,
         description="Unique identifier for this workflow execution.",
     )
-    workflow_name: Optional[str] = Field(
+    workflow_name: str | None = Field(
         default=None,
         description="Human-readable name of the workflow being executed, if known.",
     )
@@ -94,7 +94,7 @@ class AIContext(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="Timestamp the context was created, in UTC.",
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description=(
             "Free-form workflow metadata, such as trace or caller "
@@ -108,7 +108,7 @@ class AIContext(BaseModel):
             "from business data. Owned and mutated by the AIOrchestrator."
         ),
     )
-    data: Dict[str, Any] = Field(
+    data: dict[str, Any] = Field(
         default_factory=dict,
         description=(
             "Structured, engine-populated workflow data. Each engine "

@@ -7,14 +7,13 @@ by every parser in this package.
 """
 
 import re
-from typing import List, Optional
 
 from app.models.candidate import Certification
 
 _YEAR_PATTERN = re.compile(r"(?:19|20)\d{2}")
 
 
-def parse_certifications(section_text: str) -> List[Certification]:
+def parse_certifications(section_text: str) -> list[Certification]:
     """
     Extract certification entries from the certifications section.
 
@@ -31,7 +30,7 @@ def parse_certifications(section_text: str) -> List[Certification]:
     if not section_text or not section_text.strip():
         return []
 
-    entries: List[Certification] = []
+    entries: list[Certification] = []
     for line in section_text.splitlines():
         stripped = line.strip().lstrip("-•* ").strip()
         if not stripped:

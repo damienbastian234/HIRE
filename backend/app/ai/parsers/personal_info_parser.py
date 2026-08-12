@@ -8,7 +8,6 @@ future ticket without the engine's interface changing.
 """
 
 import re
-from typing import List, Optional
 
 from app.models.candidate import PersonalInfo
 
@@ -79,7 +78,7 @@ def _extract_labeled_values(text: str) -> dict:
     return found
 
 
-def _extract_full_name(text: str) -> Optional[str]:
+def _extract_full_name(text: str) -> str | None:
     """
     Heuristically treat the first non-empty line as the candidate's
     name, provided it doesn't look like an email, phone number, or a

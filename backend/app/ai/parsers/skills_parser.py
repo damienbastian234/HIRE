@@ -7,7 +7,6 @@ by every parser in this package.
 """
 
 import re
-from typing import List
 
 from app.models.candidate import Skills
 
@@ -37,9 +36,9 @@ def parse_skills(section_text: str) -> Skills:
     if not section_text or not section_text.strip():
         return Skills()
 
-    technical: List[str] = []
-    soft: List[str] = []
-    unlabeled: List[str] = []
+    technical: list[str] = []
+    soft: list[str] = []
+    unlabeled: list[str] = []
 
     for line in section_text.splitlines():
         stripped = line.strip().lstrip("-•* ").strip()
@@ -65,11 +64,11 @@ def parse_skills(section_text: str) -> Skills:
     )
 
 
-def _split_items(text: str) -> List[str]:
+def _split_items(text: str) -> list[str]:
     return [item.strip() for item in re.split(r"[,;]", text) if item.strip()]
 
 
-def _deduplicate(items: List[str]) -> List[str]:
+def _deduplicate(items: list[str]) -> list[str]:
     seen = set()
     result = []
     for item in items:

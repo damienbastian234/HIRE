@@ -3,7 +3,6 @@ AI Orchestrator: coordinates Intelligence System engines against a
 shared AIContext.
 """
 
-from typing import List
 
 from app.ai.context import AIContext, WorkflowStatus
 from app.ai.exceptions import AIException, OrchestrationException
@@ -43,7 +42,7 @@ class AIOrchestrator:
         self._registry = registry
 
     async def run(
-        self, context: AIContext, engine_names: List[str]
+        self, context: AIContext, engine_names: list[str]
     ) -> WorkflowResult:
         """
         Execute the named engines sequentially against the given context.
@@ -95,7 +94,7 @@ class AIOrchestrator:
                 results=[],
             )
 
-        results: List[IntelligenceResult] = []
+        results: list[IntelligenceResult] = []
         total = len(engine_names)
         context.state.workflow_status = WorkflowStatus.RUNNING
 

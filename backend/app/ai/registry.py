@@ -2,7 +2,6 @@
 Lightweight registry for AI Intelligence System engines.
 """
 
-from typing import Dict, List
 
 from app.ai.base_engine import BaseEngine
 from app.ai.exceptions import EngineRegistrationException
@@ -21,7 +20,7 @@ class EngineRegistry:
     """
 
     def __init__(self) -> None:
-        self._engines: Dict[str, BaseEngine] = {}
+        self._engines: dict[str, BaseEngine] = {}
 
     def register(self, engine: BaseEngine) -> None:
         """
@@ -73,6 +72,6 @@ class EngineRegistry:
         """Return True if an engine is currently registered under `name`."""
         return name in self._engines
 
-    def list_engines(self) -> List[str]:
+    def list_engines(self) -> list[str]:
         """Return the names of all currently registered engines."""
         return list(self._engines.keys())

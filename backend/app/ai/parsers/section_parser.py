@@ -13,11 +13,10 @@ without any change to ResumeIntelligenceEngine, which only ever calls
 `parse_sections(text)`.
 """
 
-from typing import Dict, List
 
 # Recognized section header text (case-insensitive) mapped to the
 # canonical section key used by the rest of the parsing pipeline.
-_SECTION_HEADER_ALIASES: Dict[str, str] = {
+_SECTION_HEADER_ALIASES: dict[str, str] = {
     alias: key
     for key, aliases in {
         "education": ["education", "academic background", "academics"],
@@ -40,7 +39,7 @@ _SECTION_HEADER_ALIASES: Dict[str, str] = {
 }
 
 
-def parse_sections(text: str) -> Dict[str, str]:
+def parse_sections(text: str) -> dict[str, str]:
     """
     Split raw resume text into named sections based on recognized
     header lines (e.g. "EDUCATION", "Work Experience:").
@@ -61,7 +60,7 @@ def parse_sections(text: str) -> Dict[str, str]:
     if not text:
         return {}
 
-    sections: Dict[str, List[str]] = {}
+    sections: dict[str, list[str]] = {}
     current_key = None
 
     for line in text.splitlines():

@@ -8,7 +8,7 @@ these Protocols exist so other components (e.g. the registry) can be
 typed against expected behavior rather than a specific class hierarchy.
 """
 
-from typing import List, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from app.ai.context import AIContext
 from app.ai.result import IntelligenceResult, WorkflowResult
@@ -38,7 +38,7 @@ class OrchestratorInterface(Protocol):
     """
 
     async def run(
-        self, context: AIContext, engine_names: List[str]
+        self, context: AIContext, engine_names: list[str]
     ) -> WorkflowResult:
         """Execute the named engines, in order, against the given context."""
         ...

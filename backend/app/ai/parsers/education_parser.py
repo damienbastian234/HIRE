@@ -7,7 +7,6 @@ by every parser in this package.
 """
 
 import re
-from typing import List
 
 from app.models.candidate import Education
 
@@ -15,7 +14,7 @@ _GPA_PATTERN = re.compile(r"(?:CGPA|GPA)\s*[:\-]?\s*([\d.]+)", re.IGNORECASE)
 _YEAR_PATTERN = re.compile(r"(?:19|20)\d{2}")
 
 
-def parse_education(section_text: str) -> List[Education]:
+def parse_education(section_text: str) -> list[Education]:
     """
     Extract education entries from the education section of a resume.
 
@@ -33,7 +32,7 @@ def parse_education(section_text: str) -> List[Education]:
     if not section_text or not section_text.strip():
         return []
 
-    entries: List[Education] = []
+    entries: list[Education] = []
     for line in section_text.splitlines():
         stripped = line.strip().lstrip("-•* ").strip()
         if not stripped:

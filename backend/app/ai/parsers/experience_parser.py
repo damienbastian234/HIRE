@@ -7,7 +7,6 @@ by every parser in this package.
 """
 
 import re
-from typing import List, Optional, Tuple
 
 from app.models.candidate import Experience
 
@@ -18,7 +17,7 @@ _DATE_RANGE_PATTERN = re.compile(
 _EMPLOYMENT_TYPES = ["full-time", "part-time", "internship", "contract", "freelance"]
 
 
-def parse_experience(section_text: str) -> List[Experience]:
+def parse_experience(section_text: str) -> list[Experience]:
     """
     Extract work experience entries from the experience section.
 
@@ -40,10 +39,10 @@ def parse_experience(section_text: str) -> List[Experience]:
     return [_parse_experience_block(block) for block in blocks if block]
 
 
-def _split_into_blocks(section_text: str) -> List[List[str]]:
+def _split_into_blocks(section_text: str) -> list[list[str]]:
     """Split section text into blocks of lines, separated by blank lines."""
-    blocks: List[List[str]] = []
-    current: List[str] = []
+    blocks: list[list[str]] = []
+    current: list[str] = []
     for line in section_text.splitlines():
         if line.strip():
             current.append(line.strip())
@@ -55,7 +54,7 @@ def _split_into_blocks(section_text: str) -> List[List[str]]:
     return blocks
 
 
-def _parse_experience_block(lines: List[str]) -> Experience:
+def _parse_experience_block(lines: list[str]) -> Experience:
     header = lines[0]
     responsibilities = [
         line.lstrip("-•* ").strip() for line in lines[1:] if line.strip()
@@ -86,7 +85,7 @@ def _parse_experience_block(lines: List[str]) -> Experience:
     )
 
 
-def _split_position_company(header: str) -> Tuple[Optional[str], Optional[str]]:
+def _split_position_company(header: str) -> tuple[str | None, str | None]:
     """Split a 'Position at Company' or 'Position, Company' header."""
     for separator in [" at ", " - ", ", "]:
         if separator in header:

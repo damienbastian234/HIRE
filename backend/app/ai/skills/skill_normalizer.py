@@ -7,12 +7,11 @@ strings, returns the normalized, deduplicated list plus the original-
 form strings identified as duplicates.
 """
 
-from typing import Dict, List, Set, Tuple
 
 # Lowercased alias -> canonical skill name. Only variants explicitly
 # listed here are normalized; anything not present is passed through
 # unchanged (preserving its original casing).
-_SKILL_ALIASES: Dict[str, str] = {
+_SKILL_ALIASES: dict[str, str] = {
     # Programming Languages
     "python": "Python", "python3": "Python", "py": "Python",
     "javascript": "JavaScript", "js": "JavaScript", "java script": "JavaScript",
@@ -63,7 +62,7 @@ _SKILL_ALIASES: Dict[str, str] = {
 }
 
 
-def normalize_skills(raw_skills: List[str]) -> Tuple[List[str], List[str]]:
+def normalize_skills(raw_skills: list[str]) -> tuple[list[str], list[str]]:
     """
     Normalize a list of raw skill strings using deterministic aliases,
     deduplicate the result, and report which original strings were
@@ -85,9 +84,9 @@ def normalize_skills(raw_skills: List[str]) -> Tuple[List[str], List[str]]:
           that were found to be duplicates of an already-seen skill,
           in the order encountered.
     """
-    seen_canonical: Set[str] = set()
-    normalized_unique: List[str] = []
-    duplicates: List[str] = []
+    seen_canonical: set[str] = set()
+    normalized_unique: list[str] = []
+    duplicates: list[str] = []
 
     for raw in raw_skills:
         if not raw or not raw.strip():

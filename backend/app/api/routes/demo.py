@@ -1,6 +1,7 @@
+from typing import Literal
+
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, EmailStr
-from typing import Optional, Literal
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -62,15 +63,15 @@ class RegisterRequest(BaseModel):
     name: str
     email: str
     password: str
-    role: Optional[Literal["candidate", "recruiter"]] = "candidate"
+    role: Literal["candidate", "recruiter"] | None = "candidate"
 
 
 class ProfileUpdateRequest(BaseModel):
-    name: Optional[str] = None
-    title: Optional[str] = None
-    email: Optional[str] = None
-    location: Optional[str] = None
-    role: Optional[Literal["candidate", "recruiter"]] = None
+    name: str | None = None
+    title: str | None = None
+    email: str | None = None
+    location: str | None = None
+    role: Literal["candidate", "recruiter"] | None = None
 
 
 @router.post("/auth/login")

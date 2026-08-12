@@ -7,7 +7,6 @@ AI, no fuzzy matching, no dependency beyond the skill_intelligence
 data models.
 """
 
-from typing import List
 
 from app.models.skill_intelligence import SkillCategory, SkillMetrics
 
@@ -15,9 +14,9 @@ _SOFT_SKILLS_CATEGORY = "Soft Skills"
 
 
 def compute_metrics(
-    normalized_skills: List[str],
-    categories: List[SkillCategory],
-    uncategorized: List[str],
+    normalized_skills: list[str],
+    categories: list[SkillCategory],
+    uncategorized: list[str],
 ) -> SkillMetrics:
     """
     Compute aggregate skill metrics from the normalized pipeline output.

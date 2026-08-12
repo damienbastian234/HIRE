@@ -28,7 +28,7 @@ Usage:
         return SuccessResponse(message="Employees retrieved successfully.", data=employees)
 """
 
-from typing import Generic, Literal, Optional, TypeVar
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -67,7 +67,7 @@ class SuccessResponse(BaseModel, Generic[T]):
         default="Operation completed successfully.",
         description="Human-readable summary of the result.",
     )
-    data: Optional[T] = Field(
+    data: T | None = Field(
         default=None,
         description=(
             "Response payload. May be an object, list, dictionary, "

@@ -11,7 +11,6 @@ that remains the AIOrchestrator's exclusive responsibility (see
 app.ai.context.WorkflowState).
 """
 
-from typing import Dict, List, Tuple
 
 from app.ai.base_engine import BaseEngine
 from app.ai.context import AIContext
@@ -32,7 +31,7 @@ logger = get_logger(__name__)
 
 # Weights for the deterministic, extraction-completeness confidence
 # score. Must sum to 1.0.
-_CONFIDENCE_WEIGHTS: Dict[str, float] = {
+_CONFIDENCE_WEIGHTS: dict[str, float] = {
     "personal_info": 0.20,
     "education": 0.15,
     "experience": 0.25,
@@ -115,9 +114,9 @@ class ResumeIntelligenceEngine(BaseEngine):
             warnings=warnings,
         )
 
-    def _build_profile(self, resume_text: str) -> Tuple[CandidateProfile, List[str]]:
+    def _build_profile(self, resume_text: str) -> tuple[CandidateProfile, list[str]]:
         """Run every specialized parser against the resume text and assemble a CandidateProfile."""
-        warnings: List[str] = []
+        warnings: list[str] = []
         sections = parse_sections(resume_text)
 
         personal_info = parse_personal_info(resume_text)
@@ -193,7 +192,7 @@ class ResumeIntelligenceEngine(BaseEngine):
         return filled / len(fields)
 
     @staticmethod
-    def _list_completeness(entries: List, fields: List[str]) -> float:
+    def _list_completeness(entries: list, fields: list[str]) -> float:
         if not entries:
             return 0.0
         per_entry_scores = []

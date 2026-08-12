@@ -8,13 +8,12 @@ external dependencies beyond the data models and the categorizer's
 known-category list.
 """
 
-from typing import Dict, List
 
 from app.ai.skills.skill_categorizer import KNOWN_CATEGORIES
 from app.models.skill_intelligence import SkillCategory, SkillGap
 
 # Generic, non-job-specific recommendation phrasing per category.
-_RECOMMENDATION_PHRASES: Dict[str, str] = {
+_RECOMMENDATION_PHRASES: dict[str, str] = {
     "Programming Languages": "Consider adding programming language experience.",
     "Frameworks": "Consider adding framework experience.",
     "Databases": "Consider adding database experience.",
@@ -24,7 +23,7 @@ _RECOMMENDATION_PHRASES: Dict[str, str] = {
 }
 
 
-def analyze_gaps(categories: List[SkillCategory]) -> SkillGap:
+def analyze_gaps(categories: list[SkillCategory]) -> SkillGap:
     """
     Identify known skill categories with zero representation and
     produce a generic recommendation for each.

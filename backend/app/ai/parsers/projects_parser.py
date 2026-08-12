@@ -6,14 +6,13 @@ personal_info_parser.py for the module-level design rationale shared
 by every parser in this package.
 """
 
-from typing import List, Optional, Tuple
 
 from app.models.candidate import Project
 
 _TECH_LABELS = {"technologies", "tech stack", "tools", "stack"}
 
 
-def parse_projects(section_text: str) -> List[Project]:
+def parse_projects(section_text: str) -> list[Project]:
     """
     Extract project entries from the projects section of a resume.
 
@@ -35,9 +34,9 @@ def parse_projects(section_text: str) -> List[Project]:
     return [_parse_project_block(block) for block in blocks if block]
 
 
-def _split_into_blocks(section_text: str) -> List[List[str]]:
-    blocks: List[List[str]] = []
-    current: List[str] = []
+def _split_into_blocks(section_text: str) -> list[list[str]]:
+    blocks: list[list[str]] = []
+    current: list[str] = []
     for line in section_text.splitlines():
         if line.strip():
             current.append(line.strip())
@@ -49,11 +48,11 @@ def _split_into_blocks(section_text: str) -> List[List[str]]:
     return blocks
 
 
-def _parse_project_block(lines: List[str]) -> Project:
+def _parse_project_block(lines: list[str]) -> Project:
     header = lines[0].lstrip("-•* ").strip()
     name, description = _split_name_description(header)
 
-    technologies: List[str] = []
+    technologies: list[str] = []
     for line in lines[1:]:
         stripped = line.lstrip("-•* ").strip()
         label, sep, rest = stripped.partition(":")
@@ -67,7 +66,7 @@ def _parse_project_block(lines: List[str]) -> Project:
     )
 
 
-def _split_name_description(header: str) -> Tuple[Optional[str], Optional[str]]:
+def _split_name_description(header: str) -> tuple[str | None, str | None]:
     if " - " in header:
         name, _, description = header.partition(" - ")
         return name.strip() or None, description.strip() or None

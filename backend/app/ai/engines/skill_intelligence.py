@@ -12,7 +12,6 @@ responsibility. It never mutates `context.state`; that remains the
 AIOrchestrator's exclusive responsibility (see app.ai.context.WorkflowState).
 """
 
-from typing import Dict, List, Tuple
 
 from app.ai.base_engine import BaseEngine
 from app.ai.context import AIContext
@@ -30,7 +29,7 @@ logger = get_logger(__name__)
 
 # Weights for the deterministic, stage-completeness confidence score.
 # Must sum to 1.0.
-_CONFIDENCE_WEIGHTS: Dict[str, float] = {
+_CONFIDENCE_WEIGHTS: dict[str, float] = {
     "normalization": 0.20,
     "categorization": 0.35,
     "metrics": 0.20,
@@ -111,7 +110,7 @@ class SkillIntelligenceEngine(BaseEngine):
 
     def _build_skill_intelligence(
         self, profile: CandidateProfile
-    ) -> Tuple[SkillIntelligence, float]:
+    ) -> tuple[SkillIntelligence, float]:
         """Run the full normalize -> categorize -> metrics -> gap-analysis pipeline."""
         raw_skills = list(profile.skills.technical_skills) + list(profile.skills.soft_skills)
 
@@ -139,9 +138,9 @@ class SkillIntelligenceEngine(BaseEngine):
 
     def _calculate_confidence(
         self,
-        raw_skills: List[str],
-        normalized_unique: List[str],
-        uncategorized: List[str],
+        raw_skills: list[str],
+        normalized_unique: list[str],
+        uncategorized: list[str],
         total_skills: int,
         gaps: SkillGap,
     ) -> float:
@@ -175,7 +174,7 @@ class SkillIntelligenceEngine(BaseEngine):
         return round(min(max(confidence, 0.0), 1.0), 4)
 
     @staticmethod
-    def _normalization_score(raw_skills: List[str]) -> float:
+    def _normalization_score(raw_skills: list[str]) -> float:
         """
         Score whether normalization had valid data to process and
         completed successfully — deliberately independent of whether
@@ -195,7 +194,7 @@ class SkillIntelligenceEngine(BaseEngine):
         return 1.0 if valid_input_count > 0 else 0.0
 
     @staticmethod
-    def _categorization_score(normalized_unique: List[str], uncategorized: List[str]) -> float:
+    def _categorization_score(normalized_unique: list[str], uncategorized: list[str]) -> float:
         if not normalized_unique:
             return 0.0
         categorized_count = len(normalized_unique) - len(uncategorized)

@@ -3,7 +3,7 @@ Standardized result model returned by every Intelligence System (Engine).
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -35,7 +35,7 @@ class IntelligenceResult(BaseModel):
         ...,
         description="Outcome of the engine's execution.",
     )
-    confidence: Optional[float] = Field(
+    confidence: float | None = Field(
         default=None,
         ge=0.0,
         le=1.0,
@@ -44,19 +44,19 @@ class IntelligenceResult(BaseModel):
             "None if not applicable."
         ),
     )
-    output: Dict[str, Any] = Field(
+    output: dict[str, Any] = Field(
         default_factory=dict,
         description="Structured output produced by the engine.",
     )
-    warnings: List[str] = Field(
+    warnings: list[str] = Field(
         default_factory=list,
         description="Non-fatal warning messages produced during execution.",
     )
-    errors: List[str] = Field(
+    errors: list[str] = Field(
         default_factory=list,
         description="Error messages produced during execution, if any.",
     )
-    execution_time_ms: Optional[float] = Field(
+    execution_time_ms: float | None = Field(
         default=None,
         ge=0.0,
         description="Wall-clock execution time in milliseconds.",
@@ -80,7 +80,7 @@ class WorkflowResult(BaseModel):
         ...,
         description="Identifier of the AIContext workflow this result belongs to.",
     )
-    results: List[IntelligenceResult] = Field(
+    results: list[IntelligenceResult] = Field(
         default_factory=list,
         description="Per-engine results, in the order the engines were executed.",
     )

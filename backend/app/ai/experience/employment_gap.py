@@ -8,7 +8,11 @@ unavailable, simply skipping pairs that can't be evaluated rather than
 raising or guessing.
 """
 
-from app.models.experience_intelligence_model import CareerTimeline, EmploymentGap, EmploymentGapAnalysis
+from app.models.experience_intelligence_model import (
+    CareerTimeline,
+    EmploymentGap,
+    EmploymentGapAnalysis,
+)
 
 # A gap shorter than this (in months) is treated as a normal
 # transition between roles, not a reportable employment gap.

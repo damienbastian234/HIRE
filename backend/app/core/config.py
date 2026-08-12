@@ -9,7 +9,6 @@ read environment variables directly; import `settings` (or call
 
 from enum import Enum
 from functools import lru_cache
-from typing import List, Optional, Union
 
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -71,13 +70,13 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Database (optional until HIRE-BE-DB ticket)
     # ------------------------------------------------------------------
-    DATABASE_URL: Optional[str] = None
+    DATABASE_URL: str | None = None
 
     # ------------------------------------------------------------------
     # Reserved AI provider configuration (no AI implementation yet)
     # ------------------------------------------------------------------
-    OPENAI_API_KEY: Optional[str] = None
-    GEMINI_API_KEY: Optional[str] = None
+    OPENAI_API_KEY: str | None = None
+    GEMINI_API_KEY: str | None = None
 
     # ------------------------------------------------------------------
     # File uploads
@@ -92,7 +91,7 @@ class Settings(BaseSettings):
 
     @field_validator("ALLOWED_ORIGINS", mode="before")
     @classmethod
-    def split_allowed_origins(cls, value: Union[str, List[str]]) -> str:
+    def split_allowed_origins(cls, value: str | list[str]) -> str:
         """
         Keep the raw dotenv value as plain text so pydantic-settings does not
         attempt JSON decoding of a comma-delimited string, and then expose the

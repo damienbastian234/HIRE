@@ -7,12 +7,11 @@ by every parser in this package.
 """
 
 import re
-from typing import List
 
 _LABEL_PATTERN = re.compile(r"^[A-Za-z ]+:\s*")
 
 
-def parse_languages(section_text: str) -> List[str]:
+def parse_languages(section_text: str) -> list[str]:
     """
     Extract known spoken languages from the languages section.
 
@@ -26,7 +25,7 @@ def parse_languages(section_text: str) -> List[str]:
     if not section_text or not section_text.strip():
         return []
 
-    items: List[str] = []
+    items: list[str] = []
     for line in section_text.splitlines():
         stripped = line.strip().lstrip("-•* ").strip()
         if not stripped:
@@ -37,7 +36,7 @@ def parse_languages(section_text: str) -> List[str]:
     return _deduplicate(items)
 
 
-def _deduplicate(items: List[str]) -> List[str]:
+def _deduplicate(items: list[str]) -> list[str]:
     seen = set()
     result = []
     for item in items:

@@ -4,7 +4,7 @@ from app.ai.base_engine import BaseEngine
 from app.ai.context import AIContext
 from app.ai.orchestrator import AIOrchestrator
 from app.ai.registry import EngineRegistry
-from app.ai.result import IntelligenceResult, ExecutionStatus
+from app.ai.result import ExecutionStatus, IntelligenceResult
 
 
 class DemoEngine(BaseEngine):

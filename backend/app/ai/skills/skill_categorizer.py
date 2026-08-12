@@ -7,14 +7,13 @@ skill names, returns them grouped into known categories plus a list
 of skills that matched no known category.
 """
 
-from typing import Dict, List, Tuple
 
 from app.models.skill_intelligence import SkillCategory
 
 # Category name -> that category's known reference skills. Skill names
 # here must match the canonical forms produced by
 # skill_normalizer.normalize_skills.
-_CATEGORY_SKILLS: Dict[str, List[str]] = {
+_CATEGORY_SKILLS: dict[str, list[str]] = {
     "Programming Languages": ["Python", "Java", "JavaScript", "Go", "Rust", "C++", "C#", "TypeScript"],
     "Frameworks": ["FastAPI", "Flask", "Django", "Spring", "React", "Angular", "Vue", "Node.js"],
     "Databases": ["MySQL", "PostgreSQL", "MongoDB", "SQLite", "Redis"],
@@ -24,17 +23,17 @@ _CATEGORY_SKILLS: Dict[str, List[str]] = {
 }
 
 # Reverse lookup for O(1) categorization: canonical skill name -> category.
-_SKILL_TO_CATEGORY: Dict[str, str] = {
+_SKILL_TO_CATEGORY: dict[str, str] = {
     skill: category
     for category, skills in _CATEGORY_SKILLS.items()
     for skill in skills
 }
 
 # The full universe of known categories, exposed for gap analysis.
-KNOWN_CATEGORIES: List[str] = list(_CATEGORY_SKILLS.keys())
+KNOWN_CATEGORIES: list[str] = list(_CATEGORY_SKILLS.keys())
 
 
-def categorize_skills(normalized_skills: List[str]) -> Tuple[List[SkillCategory], List[str]]:
+def categorize_skills(normalized_skills: list[str]) -> tuple[list[SkillCategory], list[str]]:
     """
     Group normalized skills into known categories.
 
@@ -51,8 +50,8 @@ def categorize_skills(normalized_skills: List[str]) -> Tuple[List[SkillCategory]
           reference skill count.
         - uncategorized: skills that did not match any known category.
     """
-    grouped: Dict[str, List[str]] = {name: [] for name in KNOWN_CATEGORIES}
-    uncategorized: List[str] = []
+    grouped: dict[str, list[str]] = {name: [] for name in KNOWN_CATEGORIES}
+    uncategorized: list[str] = []
 
     for skill in normalized_skills:
         category = _SKILL_TO_CATEGORY.get(skill)

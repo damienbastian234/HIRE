@@ -14,7 +14,6 @@ respectively. It never mutates `context.state`; that remains the
 AIOrchestrator's exclusive responsibility (see app.ai.context.WorkflowState).
 """
 
-from typing import Dict, List, Tuple
 
 from app.ai.base_engine import BaseEngine
 from app.ai.context import AIContext
@@ -41,7 +40,7 @@ logger = get_logger(__name__)
 
 # Weights for the deterministic, stage-completeness confidence score.
 # Must sum to 1.0.
-_CONFIDENCE_WEIGHTS: Dict[str, float] = {
+_CONFIDENCE_WEIGHTS: dict[str, float] = {
     "timeline": 0.20,
     "experience": 0.25,
     "progression": 0.20,
@@ -124,7 +123,7 @@ class ExperienceIntelligenceEngine(BaseEngine):
 
     def _build_experience_intelligence(
         self, profile: CandidateProfile
-    ) -> Tuple[ExperienceIntelligence, float]:
+    ) -> tuple[ExperienceIntelligence, float]:
         """Run the full timeline -> metrics -> progression -> gaps -> stability -> seniority pipeline."""
         timeline = build_timeline(profile.experience)
         metrics = calculate_metrics(timeline)
@@ -209,7 +208,7 @@ class ExperienceIntelligenceEngine(BaseEngine):
     @staticmethod
     def _gap_analysis_score(timeline: CareerTimeline) -> float:
         """Fraction of consecutive dated-entry pairs where a gap determination was possible."""
-        dated_entries: List = [e for e in timeline.entries if e.has_valid_dates]
+        dated_entries: list = [e for e in timeline.entries if e.has_valid_dates]
         if len(dated_entries) < 2:
             return 0.0
         total_pairs = len(dated_entries) - 1

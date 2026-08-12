@@ -7,7 +7,6 @@ CandidateProfile.skills. They are pure data contracts: no AI-framework
 dependencies, no processing logic.
 """
 
-from typing import List
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +15,7 @@ class SkillCategory(BaseModel):
     """A single skill category and the candidate's skills within it."""
 
     name: str = Field(..., description="Category name, e.g. 'Programming Languages'.")
-    skills: List[str] = Field(
+    skills: list[str] = Field(
         default_factory=list,
         description="Normalized skills belonging to this category.",
     )
@@ -54,10 +53,10 @@ class SkillMetrics(BaseModel):
 class SkillGap(BaseModel):
     """Generic, non-job-specific skill gap analysis."""
 
-    missing_categories: List[str] = Field(
+    missing_categories: list[str] = Field(
         default_factory=list, description="Known skill categories with zero skills present."
     )
-    recommendations: List[str] = Field(
+    recommendations: list[str] = Field(
         default_factory=list, description="Generic recommendations, one per missing category."
     )
 
@@ -68,13 +67,13 @@ class SkillIntelligence(BaseModel):
     Skill Intelligence engine (HIRE-AI-103).
     """
 
-    categories: List[SkillCategory] = Field(default_factory=list)
+    categories: list[SkillCategory] = Field(default_factory=list)
     metrics: SkillMetrics
     gaps: SkillGap
-    normalized_skills: List[str] = Field(
+    normalized_skills: list[str] = Field(
         default_factory=list, description="Deduplicated, alias-normalized skill list."
     )
-    duplicate_skills: List[str] = Field(
+    duplicate_skills: list[str] = Field(
         default_factory=list,
         description="Original-form skill strings identified as duplicates of an already-normalized skill.",
     )
