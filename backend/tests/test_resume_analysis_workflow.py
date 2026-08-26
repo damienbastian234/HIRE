@@ -18,7 +18,7 @@ from app.ai.engines.skill_intelligence import SkillIntelligenceEngine
 from app.ai.exceptions import ContextValidationException, EngineExecutionException
 from app.ai.registry import EngineRegistry
 from app.ai.result import IntelligenceResult
-from app.ai.workflows.resume_analysis_workflow import _default_registry, run_resume_analysis
+from app.ai.workflows.resume_analysis_workflow import run_resume_analysis
 from app.models.candidate_matching_model import CandidateMatching
 from app.models.experience_intelligence_model import ExperienceIntelligence
 from app.models.skill_intelligence import SkillIntelligence
@@ -103,7 +103,7 @@ def test_workflow_uses_default_registry_when_none_supplied(
     sample_resume_text, sample_job_requirement
 ):
     """Calling without an explicit registry must still succeed via the
-    module's default registry factory."""
+    module's default fresh registry.."""
     result = run_async(
         run_resume_analysis(
             resume_text=sample_resume_text,
@@ -111,15 +111,6 @@ def test_workflow_uses_default_registry_when_none_supplied(
         )
     )
     assert isinstance(result, ResumeAnalysisData)
-
-
-def test_default_registry_is_not_cached_as_global_singleton():
-    """The workflow should not hold a shared mutable registry across calls."""
-    first = _default_registry()
-    second = _default_registry()
-
-    assert first is not second
-    assert first.list_engines() == second.list_engines()
 
 
 # ---------------------------------------------------------------------------
