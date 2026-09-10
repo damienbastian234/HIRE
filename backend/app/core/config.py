@@ -50,7 +50,8 @@ class Settings(BaseSettings):
     # Runtime environment
     # ------------------------------------------------------------------
     ENVIRONMENT: Environment = Environment.DEVELOPMENT
-    DEBUG: bool = True
+    DEBUG: bool = False  # Override to True in .env for development only
+
 
     # ------------------------------------------------------------------
     # API

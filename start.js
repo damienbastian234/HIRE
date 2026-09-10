@@ -1,425 +1,296 @@
+/**
+ * H.I.R.E. — Single-command startup
+ *
+ * Usage (from project root):
+ *   npm start
+ *
+ * What it does:
+ *   1. Finds the Python venv (root .venv → backend/venv → system py)
+ *   2. Frees port 8000, then starts the FastAPI backend via uvicorn
+ *   3. Waits until the backend is accepting connections
+ *   4. Starts the Vite frontend dev server on port 5173
+ *   5. Opens Microsoft Edge (Bing's browser) at http://localhost:5173
+ *   6. Ctrl-C gracefully kills both processes
+ */
+
 const { spawn, exec } = require('child_process');
 const net = require('net');
 const path = require('path');
 const fs = require('fs');
 
-const root = __dirname;
-const backendDir = path.join(root, 'backend');
+const root        = __dirname;
+const backendDir  = path.join(root, 'backend');
 const frontendDir = path.join(root, 'frontend');
 
-const BACKEND_PORT = 8000;
-const FRONTEND_START_PORT = 5173;
+const BACKEND_PORT       = 8000;
+const FRONTEND_PORT      = 5173;
+const BACKEND_TIMEOUT_MS = 30000;
+const BROWSER_DELAY_MS   = 3500;
 
+// ─── Python resolution ────────────────────────────────────────────────────────
 function getPythonCommand() {
-  if (process.env.PYTHON) return process.env.PYTHON;
+  if (process.env.PYTHON)     return process.env.PYTHON;
   if (process.env.PYTHON_EXE) return process.env.PYTHON_EXE;
 
-  // Always prefer the project's virtual environment.
-  const venvPython =
-    process.platform === 'win32'
-      ? path.join(root, 'backend', 'venv', 'Scripts', 'python.exe')
-      : path.join(root, 'backend', 'venv', 'bin', 'python');
+  // Priority 1 — root-level .venv (where pip install was run)
+  const rootVenv = process.platform === 'win32'
+    ? path.join(root, '.venv', 'Scripts', 'python.exe')
+    : path.join(root, '.venv', 'bin', 'python');
 
-  if (fs.existsSync(venvPython)) {
-    return venvPython;
-  }
+  if (fs.existsSync(rootVenv)) return rootVenv;
 
-  // Fallback to system Python.
+  // Priority 2 — backend-level venv
+  const backendVenv = process.platform === 'win32'
+    ? path.join(backendDir, 'venv', 'Scripts', 'python.exe')
+    : path.join(backendDir, 'venv', 'bin', 'python');
+
+  if (fs.existsSync(backendVenv)) return backendVenv;
+
+  // Priority 3 — system Python
   return process.platform === 'win32' ? 'py' : 'python3';
 }
 
-const pythonCmd = getPythonCommand();
-
-function isPortAvailable(port) {
-  return new Promise((resolve) => {
-    const server = net.createServer();
-
-    server.once('error', () => {
-      resolve(false);
-    });
-
-    server.once('listening', () => {
-      server.close(() => {
-        resolve(true);
-      });
-    });
-
-    server.listen(port, '127.0.0.1');
+// ─── Port helpers ─────────────────────────────────────────────────────────────
+function isPortFree(port) {
+  return new Promise(resolve => {
+    const srv = net.createServer();
+    srv.once('error', () => resolve(false));
+    srv.once('listening', () => srv.close(() => resolve(true)));
+    srv.listen(port, '127.0.0.1');
   });
 }
 
-function killProcessesOnPort(port) {
-  return new Promise((resolve) => {
+/**
+ * Kill processes on *port*, but only if they look like Python/Node.js processes
+ * (uvicorn, python, node, npm).  Unrelated apps on the same port are left alone
+ * and a warning is printed instead.
+ */
+function killPort(port) {
+  return new Promise(resolve => {
     if (process.platform === 'win32') {
-      exec(
-        `netstat -ano -p tcp | findstr :${port}`,
-        (error, stdout) => {
-          if (error || !stdout) {
-            resolve();
-            return;
-          }
+      exec(`netstat -ano -p tcp | findstr :${port}`, (err, out) => {
+        if (err || !out) { resolve(); return; }
+        const pids = [...new Set(
+          out.split(/\r?\n/)
+             .map(l => (l.match(/\s+(\d+)\s*$/) || [])[1])
+             .filter(p => p && p !== '0')
+        )];
+        if (!pids.length) { resolve(); return; }
 
-          const pids = [];
-
-          for (const line of stdout.split(/\r?\n/)) {
-            const match = line.match(/\s+(\d+)\s*$/);
-
-            if (match) {
-              pids.push(match[1]);
+        let rem = pids.length;
+        pids.forEach(pid => {
+          // Check the process image name before killing.
+          exec(`tasklist /FI "PID eq ${pid}" /NH /FO CSV`, (e2, info) => {
+            const name = (info || '').toLowerCase();
+            const isOurs = /python|uvicorn|node|npm/.test(name);
+            if (isOurs) {
+              exec(`taskkill /F /PID ${pid}`, () => { if (--rem === 0) resolve(); });
+            } else {
+              console.warn(`[startup]  ⚠ Port ${port} held by unrelated process (PID ${pid}) — skipping kill.`);
+              if (--rem === 0) resolve();
             }
-          }
+          });
+        });
+      });
+    } else {
+      // On Unix, check via ps before killing.
+      exec(`lsof -ti tcp:${port}`, (err, out) => {
+        if (err || !out) { resolve(); return; }
+        const pids = out.trim().split(/\s+/).filter(Boolean);
+        let rem = pids.length;
+        pids.forEach(pid => {
+          exec(`ps -p ${pid} -o comm=`, (e2, comm) => {
+            const name = (comm || '').toLowerCase();
+            const isOurs = /python|uvicorn|node|npm/.test(name);
+            if (isOurs) {
+              exec(`kill -9 ${pid}`, () => { if (--rem === 0) resolve(); });
+            } else {
+              console.warn(`[startup]  ⚠ Port ${port} held by unrelated process (PID ${pid}: ${comm.trim()}) — skipping kill.`);
+              if (--rem === 0) resolve();
+            }
+          });
+        });
+      });
+    }
+  });
+}
 
-          const uniquePids = [...new Set(pids)];
-
-          // Do not kill PID 0
-          const validPids = uniquePids.filter((pid) => pid !== '0');
-
-          if (!validPids.length) {
-            resolve();
-            return;
-          }
-
-          let remaining = validPids.length;
-
-          for (const pid of validPids) {
-            exec(`taskkill /F /PID ${pid}`, () => {
-              remaining--;
-
-              if (remaining === 0) {
-                resolve();
-              }
-            });
-          }
+/**
+ * Poll the /health HTTP endpoint until it returns 200 or the timeout elapses.
+ * This verifies the app is actually serving requests, not just that the TCP
+ * port is open (uvicorn binds the port briefly before the app is ready).
+ */
+function waitForHealth(port, timeoutMs = BACKEND_TIMEOUT_MS) {
+  const http = require('http');
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs;
+    const try_ = () => {
+      const req = http.get(
+        { host: '127.0.0.1', port, path: '/api/v1/health', timeout: 800 },
+        res => {
+          res.resume(); // drain
+          if (res.statusCode === 200) { resolve(); }
+          else { Date.now() < deadline ? setTimeout(try_, 400) : reject(new Error(`Health check failed (HTTP ${res.statusCode})`)); }
         }
       );
-    } else {
-      exec(
-        `lsof -ti tcp:${port} | xargs -r kill -9`,
-        () => resolve()
-      );
-    }
+      req.on('error', () => {
+        Date.now() < deadline ? setTimeout(try_, 400) : reject(new Error(`Timed out waiting for backend on port ${port}`));
+      });
+      req.on('timeout', () => { req.destroy(); });
+    };
+    try_();
   });
 }
 
-async function getAvailablePort(startPort) {
-  let port = startPort;
 
-  while (true) {
-    await killProcessesOnPort(port);
+// ─── Open Microsoft Edge (Bing's browser) ────────────────────────────────────
+function openEdge(url) {
+  console.log(`\nOpening Microsoft Edge → ${url}\n`);
 
-    if (await isPortAvailable(port)) {
-      return port;
-    }
-
-    port++;
+  if (process.platform === 'win32') {
+    // Try Edge directly, fall back to the system default browser
+    exec(`start "" "microsoft-edge:${url}"`, err => {
+      if (err) exec(`start "" "${url}"`, () => {});
+    });
+  } else if (process.platform === 'darwin') {
+    exec(`open -a "Microsoft Edge" "${url}" || open "${url}"`, () => {});
+  } else {
+    exec(`microsoft-edge "${url}" || xdg-open "${url}"`, () => {});
   }
 }
 
-function waitForServer(port, timeoutMs = 20000) {
-  return new Promise((resolve, reject) => {
-    const startedAt = Date.now();
+// ─── Process launchers ────────────────────────────────────────────────────────
+function startBackend(pythonCmd, port) {
+  console.log(`[backend]  Starting FastAPI on http://127.0.0.1:${port} ...`);
+  console.log(`[backend]  Python → ${pythonCmd}`);
 
-    const attempt = () => {
-      const socket = net.createConnection({
-        host: '127.0.0.1',
-        port,
-      });
-
-      socket.setTimeout(500);
-
-      socket.on('connect', () => {
-        socket.destroy();
-        resolve();
-      });
-
-      socket.on('timeout', () => {
-        socket.destroy();
-
-        if (Date.now() - startedAt > timeoutMs) {
-          reject(
-            new Error(
-              `Timed out waiting for backend on port ${port}`
-            )
-          );
-        } else {
-          setTimeout(attempt, 250);
-        }
-      });
-
-      socket.on('error', () => {
-        socket.destroy();
-
-        if (Date.now() - startedAt > timeoutMs) {
-          reject(
-            new Error(
-              `Timed out waiting for backend on port ${port}`
-            )
-          );
-        } else {
-          setTimeout(attempt, 250);
-        }
-      });
-    };
-
-    attempt();
-  });
-}
-
-function startBackend(port) {
-  console.log(
-    `Starting backend on http://127.0.0.1:${port}...`
-  );
-
-  const backendEnv = {
-    ...process.env,
-    VITE_API_TARGET: `http://127.0.0.1:${port}`,
-  };
-
-  const backend = spawn(
+  const proc = spawn(
     pythonCmd,
-    [
-      '-m',
-      'uvicorn',
-      'app.main:app',
-      '--host',
-      '127.0.0.1',
-      '--port',
-      String(port),
-    ],
+    ['-m', 'uvicorn', 'app.main:app', '--host', '127.0.0.1', '--port', String(port), '--reload'],
     {
-      cwd: backendDir,
-      stdio: 'inherit',
-      env: backendEnv,
+      cwd:         backendDir,
+      stdio:       'inherit',
+      env:         { ...process.env, PYTHONDONTWRITEBYTECODE: '1' },
       windowsHide: false,
     }
   );
-
-  backend.on('error', (error) => {
-    console.error('Failed to start backend:', error);
-  });
-
-  return backend;
+  proc.on('error', err => console.error('[backend]  Failed to start:', err.message));
+  return proc;
 }
 
-function startFrontend(port, backendPort) {
-  console.log(
-    `Starting frontend on http://localhost:${port}...`
-  );
+function startFrontend(frontendPort, backendPort) {
+  console.log(`[frontend] Starting Vite on http://localhost:${frontendPort} ...`);
 
-  const frontendEnv = {
+  const env = {
     ...process.env,
     VITE_API_TARGET: `http://127.0.0.1:${backendPort}`,
-    VITE_PORT: String(port),
   };
 
-  /*
-   * IMPORTANT:
-   *
-   * On Windows, instead of spawning npm.cmd directly,
-   * launch it through cmd.exe.
-   *
-   * This avoids the "spawn EINVAL" problem that can occur
-   * with npm.cmd on Windows.
-   */
+  // Windows: launch via cmd.exe to avoid spawn EINVAL
+  const proc = process.platform === 'win32'
+    ? spawn(
+        process.env.ComSpec || 'cmd.exe',
+        ['/d', '/s', '/c', `npm run dev -- --port ${frontendPort} --host 0.0.0.0`],
+        { cwd: frontendDir, stdio: 'inherit', env, windowsHide: false }
+      )
+    : spawn(
+        'npm',
+        ['run', 'dev', '--', '--port', String(frontendPort), '--host', '0.0.0.0'],
+        { cwd: frontendDir, stdio: 'inherit', env }
+      );
 
-  let frontend;
-
-  if (process.platform === 'win32') {
-    frontend = spawn(
-      process.env.ComSpec || 'cmd.exe',
-      [
-        '/d',
-        '/s',
-        '/c',
-        `npm run dev -- --host 0.0.0.0 --port ${port}`,
-      ],
-      {
-        cwd: frontendDir,
-        stdio: 'inherit',
-        env: frontendEnv,
-        windowsHide: false,
-      }
-    );
-  } else {
-    frontend = spawn(
-      'npm',
-      [
-        'run',
-        'dev',
-        '--',
-        '--host',
-        '0.0.0.0',
-        '--port',
-        String(port),
-      ],
-      {
-        cwd: frontendDir,
-        stdio: 'inherit',
-        env: frontendEnv,
-      }
-    );
-  }
-
-  frontend.on('error', (error) => {
-    console.error('Failed to start frontend:', error);
-  });
-
-  return frontend;
+  proc.on('error', err => console.error('[frontend] Failed to start:', err.message));
+  return proc;
 }
 
-function openInEdge(port) {
-  const url = `http://localhost:${port}`;
-
-  if (process.platform === 'win32') {
-    exec(`start "" microsoft-edge:"${url}"`, () => {});
-  } else if (process.platform === 'darwin') {
-    exec(`open "${url}"`, () => {});
-  } else {
-    exec(`xdg-open "${url}"`, () => {});
-  }
-}
-
+// ─── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   console.log('');
-  console.log('========================================');
-  console.log('        H.I.R.E Application Startup');
-  console.log('========================================');
+  console.log('╔══════════════════════════════════════════╗');
+  console.log('║       H.I.R.E.  —  Starting up...       ║');
+  console.log('╚══════════════════════════════════════════╝');
   console.log('');
 
-  // Validate required directories first.
-  if (!fs.existsSync(backendDir)) {
-    throw new Error(
-      `Backend directory not found:\n${backendDir}`
-    );
-  }
+  // Sanity checks
+  if (!fs.existsSync(backendDir))  throw new Error(`Backend directory not found:\n  ${backendDir}`);
+  if (!fs.existsSync(frontendDir)) throw new Error(`Frontend directory not found:\n  ${frontendDir}`);
 
-  if (!fs.existsSync(frontendDir)) {
-    throw new Error(
-      `Frontend directory not found:\n${frontendDir}`
-    );
-  }
+  const pythonCmd = getPythonCommand();
 
-  console.log(`Root:     ${root}`);
-  console.log(`Backend:  ${backendDir}`);
-  console.log(`Frontend: ${frontendDir}`);
+  console.log(`Root:      ${root}`);
+  console.log(`Backend:   ${backendDir}`);
+  console.log(`Frontend:  ${frontendDir}`);
+  console.log(`Python:    ${pythonCmd}`);
   console.log('');
 
-  // Clean backend port.
-  await killProcessesOnPort(BACKEND_PORT);
+  // ── Backend ──
+  await killPort(BACKEND_PORT);
 
-  // Find a free frontend port.
-  const frontendPort = await getAvailablePort(
-    FRONTEND_START_PORT
-  );
-
-  /*
-   * Start backend.
-   */
-  const backendAvailable = await isPortAvailable(
-    BACKEND_PORT
-  );
-
+  const backendFree = await isPortFree(BACKEND_PORT);
   let backend = null;
 
-  if (backendAvailable) {
-    backend = startBackend(BACKEND_PORT);
+  if (backendFree) {
+    backend = startBackend(pythonCmd, BACKEND_PORT);
 
     try {
-      await waitForServer(BACKEND_PORT);
-
-      console.log(
-        `Backend ready at http://127.0.0.1:${BACKEND_PORT}`
-      );
-    } catch (error) {
-      console.error(
-        'Backend failed to start:',
-        error.message
-      );
-
-      if (backend) {
-        backend.kill();
-      }
-
+      await waitForHealth(BACKEND_PORT);
+      console.log(`[backend]  ✓ Ready at http://127.0.0.1:${BACKEND_PORT}`);
+    } catch (err) {
+      console.error(`[backend]  ✗ ${err.message}`);
+      backend?.kill();
       process.exit(1);
     }
   } else {
-    console.log(
-      `Backend already running on http://127.0.0.1:${BACKEND_PORT}`
-    );
+    console.log(`[backend]  ✓ Already running at http://127.0.0.1:${BACKEND_PORT}`);
   }
 
-  /*
-   * Start frontend.
-   */
-  const frontend = startFrontend(
-    frontendPort,
-    BACKEND_PORT
-  );
+  console.log('');
 
-  /*
-   * Give Vite a moment to start, then open Edge.
-   */
+  // ── Frontend ──
+  const frontend = startFrontend(FRONTEND_PORT, BACKEND_PORT);
+
+  // ── Open Edge after Vite is ready ──
   setTimeout(() => {
     console.log('');
-    console.log(
-      `Frontend should be available at http://localhost:${frontendPort}`
-    );
-    console.log('');
+    console.log('╔══════════════════════════════════════════╗');
+    console.log(`║  Frontend → http://localhost:${FRONTEND_PORT}      ║`);
+    console.log(`║  Backend  → http://127.0.0.1:${BACKEND_PORT}       ║`);
+    console.log('║  Press Ctrl-C to stop both servers       ║');
+    console.log('╚══════════════════════════════════════════╝');
+    openEdge(`http://localhost:${FRONTEND_PORT}`);
+  }, BROWSER_DELAY_MS);
 
-    openInEdge(frontendPort);
-  }, 3000);
-
-  /*
-   * Shutdown everything when CTRL+C is pressed.
-   */
-  const stopAll = async () => {
-    console.log('');
-    console.log('Stopping H.I.R.E...');
-
-    if (backend) {
-      backend.kill();
-    }
-
-    if (frontend) {
-      frontend.kill();
-    }
-
+  // ── Graceful shutdown ──
+  let stopping = false;
+  const stopAll = () => {
+    if (stopping) return;
+    stopping = true;
+    console.log('\n\nStopping H.I.R.E...');
+    backend?.kill();
+    frontend?.kill();
     process.exit(0);
   };
 
-  process.on('SIGINT', stopAll);
+  process.on('SIGINT',  stopAll);
   process.on('SIGTERM', stopAll);
 
-  backend?.on('close', (code) => {
-    if (code !== 0 && code !== null) {
-      console.error(
-        `Backend exited with code ${code}`
-      );
-    }
+  backend?.on('close', code => {
+    if (!stopping && code !== 0 && code !== null)
+      console.error(`[backend]  exited with code ${code}`);
+  });
+  frontend.on('close', code => {
+    if (!stopping && code !== 0 && code !== null)
+      console.error(`[frontend] exited with code ${code}`);
   });
 
-  frontend.on('close', (code) => {
-    if (code !== 0 && code !== null) {
-      console.error(
-        `Frontend exited with code ${code}`
-      );
-    }
-  });
-
-  /*
-   * Keep this Node process alive.
-   */
+  // Keep process alive
   await new Promise(() => {});
 }
 
-main().catch((error) => {
-  console.error('');
-  console.error('========================================');
-  console.error('Startup failed');
-  console.error('========================================');
-  console.error('');
-  console.error(error);
-  console.error('');
-
+main().catch(err => {
+  console.error('\n╔══════════════════════════════════════════╗');
+  console.error('║           Startup failed                 ║');
+  console.error('╚══════════════════════════════════════════╝');
+  console.error(err.message || err);
   process.exit(1);
 });
