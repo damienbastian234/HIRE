@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "../../../.pytest_cache"
+		},
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../docs"
+		},
+		{
+			"path": "../../../images"
+		},
+		{
+			"path": "../../../tickets"
+		}
+	]
+}
