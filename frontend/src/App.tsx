@@ -39,7 +39,7 @@ const VIEW_TITLE: Record<View, string> = {
 }
 
 const VIEW_HEADING: Record<View, (name: string) => React.ReactNode> = {
-  overview:      name => <><em>{name.split(' ')[0]}</em>, good morning.</>,
+  overview:      name => <>Welcome back, <em>{name.split(' ')[0]}</em>.</>,
   opportunities: ()   => 'Find your next move',
   intelligence:  ()   => 'See what your resume says',
   profile:       ()   => 'Your professional profile',

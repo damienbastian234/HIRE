@@ -675,6 +675,15 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); out
 .role-toggle button { flex: 1; padding: 9px; color: #858a81; background: transparent; font-size: 12px; }
 .role-toggle button.selected { background: #fff; color: var(--green); box-shadow: 0 1px 4px #d9d6cd; }
 
+/* Forgot password link */
+.forgot-row { display: flex; justify-content: flex-end; margin-top: -6px; }
+.forgot-link { background: none; color: var(--muted); font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 3px; transition: color .15s; }
+.forgot-link:hover { color: var(--green); }
+
+/* Back navigation link inside auth forms */
+.back-link { display: inline-flex; align-items: center; gap: 4px; background: none; color: var(--muted); font-size: 12px; padding: 0; margin-bottom: 20px; transition: color .15s; }
+.back-link:hover { color: var(--ink); }
+
 /* ─── Mobile nav toggle ──────────────────────────────────────────────────────── */
 .menu-button { display: none; margin-right: 10px; }
 

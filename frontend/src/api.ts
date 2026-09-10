@@ -243,6 +243,11 @@ export const api = {
 
   me: () => request<User>('/auth/me'),
 
+  resetPassword: (payload: { email: string; new_password: string }) =>
+    request<{ success: boolean; message: string }>('/auth/reset-password', {
+      method: 'POST', body: JSON.stringify(payload),
+    }, false),
+
   // ── Profile ───────────────────────────────────────────────────────────────
   profile: () => request<Profile>('/profile'),
 
