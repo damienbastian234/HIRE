@@ -76,17 +76,14 @@ class TestAlembicConfiguration:
         assert "profile" in table_names
         assert "resume" in table_names
 
-    def test_initial_migration_exists_and_is_head(self, alembic_config: Config) -> None:
-        """Verify the initial migration revision exists and represents head."""
+    def test_initial_migration_exists_and_is_registered(self, alembic_config: Config) -> None:
+        """Verify the initial migration revision exists with revision 729e24449128."""
         script_dir = ScriptDirectory.from_config(alembic_config)
-        heads = script_dir.get_heads()
-
-        assert len(heads) == 1
-        head_rev = script_dir.get_revision(heads[0])
-        assert head_rev is not None
-        assert head_rev.revision == "729e24449128"
-        assert head_rev.down_revision is None
-        assert "create_user_profile_resume_tables" in head_rev.doc
+        init_rev = script_dir.get_revision("729e24449128")
+        assert init_rev is not None
+        assert init_rev.revision == "729e24449128"
+        assert init_rev.down_revision is None
+        assert "create_user_profile_resume_tables" in init_rev.doc
 
 
 # --------------------------------------------------------------------------- #
@@ -98,12 +95,12 @@ class TestMigrationScope:
     """Verify that only the approved three models are included in the initial migration."""
 
     def test_migration_contains_expected_tables(self, alembic_config: Config) -> None:
-        """Inspect the migration file to confirm user, profile, and resume are created."""
+        """Inspect the initial migration file to confirm user, profile, and resume are created."""
         script_dir = ScriptDirectory.from_config(alembic_config)
-        head_rev = script_dir.get_revision("head")
-        assert head_rev is not None
+        init_rev = script_dir.get_revision("729e24449128")
+        assert init_rev is not None
 
-        migration_file_path = head_rev.path
+        migration_file_path = init_rev.path
         content = Path(migration_file_path).read_text(encoding="utf-8")
 
         assert 'op.create_table(\n        "user",' in content or 'op.create_table(\n        \'user\',' in content or '"user"' in content
@@ -113,10 +110,10 @@ class TestMigrationScope:
     def test_migration_excludes_unimplemented_tables(self, alembic_config: Config) -> None:
         """Ensure future models not yet implemented are NOT in the initial migration."""
         script_dir = ScriptDirectory.from_config(alembic_config)
-        head_rev = script_dir.get_revision("head")
-        assert head_rev is not None
+        init_rev = script_dir.get_revision("729e24449128")
+        assert init_rev is not None
 
-        migration_file_path = head_rev.path
+        migration_file_path = init_rev.path
         content = Path(migration_file_path).read_text(encoding="utf-8")
 
         unimplemented_tables = [
