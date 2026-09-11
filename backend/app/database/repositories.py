@@ -50,6 +50,12 @@ class UserRepository:
         db.flush()
         return user
 
+    @staticmethod
+    def update_password(db: Session, user: User, new_password_hash: str) -> User:
+        user.password_hash = new_password_hash
+        db.flush()
+        return user
+
 
 # ---------------------------------------------------------------------------
 # Profile repository

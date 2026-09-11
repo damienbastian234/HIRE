@@ -30,6 +30,22 @@ export type RecruiterDashboard = {
   candidates: { name: string; stage: string; skillMatch: number }[]
 }
 
+// ─── Mock Interview Types ──────────────────────────────────────────────────────
+export type InterviewQuestion = {
+  id: number
+  type: 'behavioural' | 'situational' | 'technical' | 'motivation'
+  question: string
+  hint: string
+}
+export type InterviewEvaluation = {
+  score: number
+  verdict: string
+  strengths: string[]
+  improvements: string[]
+  model_answer: string
+  tip: string
+}
+
 // ─── Job Requirement Types (mirrors backend models/job_requirement.py) ─────────
 export type WorkMode       = 'ONSITE' | 'REMOTE' | 'HYBRID'
 export type EmploymentType = 'FULL_TIME' | 'PART_TIME' | 'CONTRACT' | 'INTERN' | 'FREELANCE' | 'TEMPORARY'
@@ -247,6 +263,28 @@ export const api = {
     request<{ success: boolean; message: string }>('/auth/reset-password', {
       method: 'POST', body: JSON.stringify(payload),
     }, false),
+
+  // ── AI Chatbot ────────────────────────────────────────────────────────────
+  chat: (messages: { role: 'user' | 'model'; content: string }[]) =>
+    request<{ reply: string }>('/chat', {
+      method: 'POST', body: JSON.stringify({ messages }),
+    }),
+
+  // ── Mock Interview ────────────────────────────────────────────────────────
+  generateInterviewQuestions: (payload: {
+    job_role: string; difficulty: string; num_questions: number
+  }) =>
+    request<{ questions: InterviewQuestion[]; job_role: string; difficulty: string }>(
+      '/interview/generate', { method: 'POST', body: JSON.stringify(payload) }
+    ),
+
+  evaluateAnswer: (payload: {
+    job_role: string; question_id: number; question_text: string;
+    question_type: string; answer: string;
+  }) =>
+    request<{ evaluation: InterviewEvaluation; question_id: number }>(
+      '/interview/evaluate', { method: 'POST', body: JSON.stringify(payload) }
+    ),
 
   // ── Profile ───────────────────────────────────────────────────────────────
   profile: () => request<Profile>('/profile'),

@@ -273,6 +273,41 @@ def get_me(
     return user.to_dict()
 
 
+class ResetPasswordRequest(BaseModel):
+    email: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters.")
+        return v
+
+
+@router.post("/auth/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Reset a user's password.
+
+    Returns the same 200 response whether the email exists or not to
+    prevent account enumeration.  The new password must be at least 8
+    characters.
+    """
+    try:
+        email = _validate_email(payload.email)
+    except HTTPException:
+        # Invalid e-mail format — still return 200 so we don't reveal anything.
+        return {"success": True, "message": "If that account exists, your password has been updated."}
+
+    user = UserRepository.get_by_email(db, email)
+    if user is not None:
+        UserRepository.update_password(db, user, hash_password(payload.new_password))
+        logger.info("Password reset for: %s", email)
+
+    return {"success": True, "message": "If that account exists, your password has been updated."}
+
+
 # ---------------------------------------------------------------------------
 # Profile endpoints
 # ---------------------------------------------------------------------------
