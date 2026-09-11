@@ -50,7 +50,8 @@ class Settings(BaseSettings):
     # Runtime environment
     # ------------------------------------------------------------------
     ENVIRONMENT: Environment = Environment.DEVELOPMENT
-    DEBUG: bool = True
+    DEBUG: bool = False  # Override to True in .env for development only
+
 
     # ------------------------------------------------------------------
     # API
@@ -77,6 +78,13 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     OPENAI_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
+    GOOGLE_API_KEY: str | None = None   # Used by google-generativeai SDK for the chatbot
+    GITHUB_CLIENT_ID: str | None = None
+    GITHUB_CLIENT_SECRET: str | None = None
+    LINKEDIN_CLIENT_ID: str | None = None
+    LINKEDIN_CLIENT_SECRET: str | None = None
+    FRONTEND_URL: str = "http://localhost:5173"
+    BACKEND_URL: str = "http://127.0.0.1:8000"
 
     # ------------------------------------------------------------------
     # File uploads
