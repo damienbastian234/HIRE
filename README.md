@@ -111,6 +111,26 @@ Instead of replacing recruiters, H.I.R.E. acts as an intelligent assistant that 
 - TypeScript
 - Tailwind CSS
 
+### Run locally
+
+The React frontend lives in `frontend/` and is wired to the FastAPI service at
+`http://127.0.0.1:8000` by default. Install backend dependencies first, then
+run the full application from the repository root:
+
+```powershell
+npm start
+```
+
+To run only the frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Set `VITE_API_TARGET` when the backend is hosted elsewhere.
+
 ## Backend
 
 - FastAPI
