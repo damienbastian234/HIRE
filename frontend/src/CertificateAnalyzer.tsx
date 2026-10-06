@@ -3,7 +3,7 @@ import {
   ShieldCheck, ShieldAlert, ShieldX, Upload, FileText,
   CheckCircle2, AlertTriangle, XCircle, RotateCcw, Info,
 } from 'lucide-react'
-import { parseError } from './api'
+import { parseError, authStore } from './api'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Verdict = 'AUTHENTIC' | 'SUSPICIOUS' | 'LIKELY_FAKE'
@@ -135,7 +135,7 @@ export default function CertificateAnalyzer() {
     setBusy(true); setError('')
     try {
       const API_BASE = import.meta.env.VITE_API_TARGET || 'http://127.0.0.1:8000'
-      const token    = localStorage.getItem('hire-token') || ''
+      const token    = authStore.getToken()
       const form     = new FormData()
       form.append('file', file)
 

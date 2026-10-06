@@ -70,6 +70,44 @@ def _quota_http_error(exc) -> HTTPException:
     return HTTPException(status_code=429, detail=msg)
 
 
+def _extract_text(response) -> str:
+    """
+    Safely extract text from a Gemini GenerateContentResponse.
+    Handles response.text being None (e.g. empty image, safety block, recitation).
+    Falls back to assembling parts manually from candidates.
+    Raises HTTPException(500) if no text can be extracted at all.
+    """
+    # Fast path — normal case
+    if response.text is not None:
+        return response.text.strip()
+
+    # Check finish reason for blocked / recitation responses
+    try:
+        candidate = response.candidates[0]
+        finish = getattr(candidate, "finish_reason", None)
+        if finish and str(finish).upper() in ("SAFETY", "RECITATION", "OTHER"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"The AI could not process this content (reason: {finish}). "
+                       "Try a clearer, higher-resolution image."
+            )
+        # Assemble text from parts
+        parts_text = " ".join(
+            p.text for p in (candidate.content.parts or []) if getattr(p, "text", None)
+        ).strip()
+        if parts_text:
+            return parts_text
+    except HTTPException:
+        raise
+    except Exception:
+        pass
+
+    raise HTTPException(
+        status_code=500,
+        detail="The AI returned an empty response. Please upload a clearer image and try again.",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Public helpers
 # ---------------------------------------------------------------------------
@@ -99,7 +137,9 @@ def call_gemini_text(
                 ),
             )
             logger.debug("Gemini text call succeeded with model=%s", model)
-            return response.text.strip()
+            return _extract_text(response)
+        except HTTPException:
+            raise
         except Exception as exc:
             if _is_quota_error(exc):
                 logger.warning("Quota exhausted for model=%s, trying next", model)
@@ -148,7 +188,9 @@ def call_gemini_vision(
                 ),
             )
             logger.debug("Gemini vision call succeeded with model=%s", model)
-            return response.text.strip()
+            return _extract_text(response)
+        except HTTPException:
+            raise
         except Exception as exc:
             if _is_quota_error(exc):
                 logger.warning("Quota exhausted for model=%s, trying next", model)

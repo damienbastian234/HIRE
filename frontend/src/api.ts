@@ -151,18 +151,18 @@ const TOKEN_KEY = 'hire-token'
 const USER_KEY  = 'hire-user'
 
 export const authStore = {
-  getToken: ()             => localStorage.getItem(TOKEN_KEY) ?? '',
-  setToken: (t: string)   => localStorage.setItem(TOKEN_KEY, t),
+  getToken: ()             => sessionStorage.getItem(TOKEN_KEY) ?? '',
+  setToken: (t: string)   => sessionStorage.setItem(TOKEN_KEY, t),
   getUser:  ()             => {
-    try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null') as User | null }
+    try { return JSON.parse(sessionStorage.getItem(USER_KEY) || 'null') as User | null }
     catch { return null }
   },
-  setUser:  (u: User)     => localStorage.setItem(USER_KEY, JSON.stringify(u)),
+  setUser:  (u: User)     => sessionStorage.setItem(USER_KEY, JSON.stringify(u)),
   clearAuth: ()            => {
-    localStorage.removeItem(TOKEN_KEY)
-    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(USER_KEY)
   },
-  isLoggedIn: ()           => Boolean(localStorage.getItem(TOKEN_KEY)),
+  isLoggedIn: ()           => Boolean(sessionStorage.getItem(TOKEN_KEY)),
 }
 
 // ─── Error Parser ─────────────────────────────────────────────────────────────
