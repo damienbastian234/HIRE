@@ -23,8 +23,7 @@ from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 
 from app.database.base import Base  # noqa: E402
-from app.database.deps import get_db  # noqa: E402
-from app.main import app  # noqa: E402
+import app.database.models  # noqa: E402,F401  -- register ORM models with Base.metadata
 from app.models.job_requirement import (  # noqa: E402
     EducationRequirement,
     ExperienceRequirement,
@@ -80,6 +79,9 @@ def _override_get_db():
 @pytest.fixture
 def client():
     """TestClient wired to the in-memory test database."""
+    from app.database.deps import get_db
+    from app.main import app
+
     app.dependency_overrides[get_db] = _override_get_db
     with TestClient(app) as c:
         yield c
