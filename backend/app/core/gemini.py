@@ -19,12 +19,12 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-# Ordered fallback chain — if primary is quota-exhausted, try the next
+# Ordered fallback chain — high-performance multimodal models
 _MODEL_CHAIN = [
+    "gemini-3.8-flash",
+    "gemini-3.7-flash",
     "gemini-3.6-flash",
-    "gemini-2.5-flash",
-    "gemini-3.5-flash-lite",
-    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash",
 ]
 
 
@@ -52,7 +52,14 @@ def _parse_retry_seconds(exc) -> int | None:
 
 
 def _is_quota_error(exc) -> bool:
-    return "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc)
+    err_str = str(exc)
+    return (
+        "429" in err_str
+        or "RESOURCE_EXHAUSTED" in err_str
+        or "503" in err_str
+        or "UNAVAILABLE" in err_str
+        or "high demand" in err_str.lower()
+    )
 
 
 def _is_model_not_found(exc) -> bool:
@@ -142,8 +149,10 @@ def call_gemini_text(
             raise
         except Exception as exc:
             if _is_quota_error(exc):
-                logger.warning("Quota exhausted for model=%s, trying next", model)
+                logger.warning("Quota or high-demand on model=%s, trying next model in chain", model)
                 last_exc = exc
+                import time
+                time.sleep(1.0)
                 continue
             if _is_model_not_found(exc):
                 logger.warning("Model not found: %s, trying next", model)
@@ -193,8 +202,10 @@ def call_gemini_vision(
             raise
         except Exception as exc:
             if _is_quota_error(exc):
-                logger.warning("Quota exhausted for model=%s, trying next", model)
+                logger.warning("Quota or high-demand on model=%s, trying next model in chain", model)
                 last_exc = exc
+                import time
+                time.sleep(1.0)
                 continue
             if _is_model_not_found(exc):
                 logger.warning("Model not found: %s, trying next", model)

@@ -11,6 +11,7 @@ type CheckStatus = 'PASS' | 'WARN' | 'FAIL'
 
 interface Finding {
   status: CheckStatus
+  score?: number      // 0-100 per-dimension score (new field)
   detail: string
 }
 
@@ -19,6 +20,7 @@ interface Analysis {
   confidence: number
   summary: string
   authenticity_score: number
+  certificate_category?: 'digital-native' | 'physical-scan' | 'unknown'
   findings: {
     visual_integrity:   Finding
     official_markers:   Finding
@@ -250,6 +252,13 @@ export default function CertificateAnalyzer() {
               <div style={{ color: vc }}><VerdictIcon verdict={a.verdict} size={44} /></div>
               <div className="cert-verdict-text">
                 <p className="cert-doc-type">{a.document_type}</p>
+                {a.certificate_category && (
+                  <span className={`cert-cat-badge cert-cat-${a.certificate_category}`}>
+                    {a.certificate_category === 'digital-native' ? '🖥 Digital Certificate'
+                      : a.certificate_category === 'physical-scan' ? '📄 Physical Document'
+                      : '📎 Document'}
+                  </span>
+                )}
                 <h2 style={{ color: vc }}>{verdictLabel(a.verdict)}</h2>
                 <p className="cert-summary">{a.summary}</p>
               </div>
@@ -289,10 +298,22 @@ export default function CertificateAnalyzer() {
                     <div className="cert-finding-header">
                       <StatusIcon status={f.status} />
                       <span className="cert-finding-name">{FINDING_LABELS[key]}</span>
-                      <span className={`cert-finding-badge cert-badge-${f.status.toLowerCase()}`}>
-                        {f.status}
-                      </span>
+                      {f.score !== undefined
+                        ? <span className="cert-finding-score" style={{
+                            fontWeight: 700, fontSize: 13,
+                            color: f.score >= 70 ? '#2d6a57' : f.score >= 40 ? '#c07830' : '#c05840'
+                          }}>{f.score}/100</span>
+                        : <span className={`cert-finding-badge cert-badge-${f.status.toLowerCase()}`}>{f.status}</span>
+                      }
                     </div>
+                    {f.score !== undefined && (
+                      <div className="cert-dim-bar-track">
+                        <div className="cert-dim-bar-fill" style={{
+                          width: `${f.score}%`,
+                          background: f.score >= 70 ? '#2d6a57' : f.score >= 40 ? '#c07830' : '#c05840'
+                        }} />
+                      </div>
+                    )}
                     <p className="cert-finding-detail">{f.detail}</p>
                   </div>
                 ))}

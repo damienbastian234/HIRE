@@ -1249,6 +1249,17 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--green); out
 .cert-badge-fail { background: #c0584020; color: #c05840; }
 .cert-finding-detail { font-size: 12.5px; line-height: 1.55; color: var(--ink); margin: 0; }
 
+/* Dimension score mini-bar */
+.cert-dim-bar-track { height: 4px; background: rgba(0,0,0,.08); border-radius: 2px; overflow: hidden; margin: 6px 0 8px; }
+.cert-dim-bar-fill  { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+/* Certificate category badge */
+.cert-cat-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; margin-bottom: 8px; }
+.cert-cat-digital-native { background: #e8f4f8; color: #1a6080; }
+.cert-cat-physical-scan  { background: #f5f0e8; color: #7a5020; }
+.cert-cat-unknown        { background: #f0f0f0; color: var(--muted); }
+
+
 /* Score bar */
 .cert-score-section    { display: flex; flex-direction: column; gap: 8px; }
 .cert-score-row        { display: flex; justify-content: space-between; align-items: center; }
